@@ -16,7 +16,7 @@ from components.penghuni.header import Header
 # Import pages
 # from pages.penghuni.homepage import Homepage
 # from pages.penghuni.layanan_kos import LayananKos
-# from pages.penghuni.berikan_feedback import BerikanFeedback
+from pages.penghuni.berikan_feedback import BerikanFeedback
 
 
 class MainViewPenghuni(tk.Tk):
@@ -39,7 +39,7 @@ class MainViewPenghuni(tk.Tk):
         self.create_layout()
         
         # Show initial page
-        self.show_register_tenant()
+        self.berikan_feedback()
     
     def create_layout(self):
         """Create main application layout"""
@@ -122,8 +122,8 @@ class MainViewPenghuni(tk.Tk):
         self.clear_page()
         self.title("AnaKosware - Berikan Feedback")
         
-        # page = BerikanFeedback(self.page_container, self)
-        # page.pack(fill=tk.BOTH, expand=True)
+        page = BerikanFeedback(self.page_container, self)
+        page.pack(fill=tk.BOTH, expand=True)
 
 
     
