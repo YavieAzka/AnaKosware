@@ -14,7 +14,7 @@ from components.pemilik.sidebar import Sidebar
 from components.pemilik.header import Header
 
 # Import pages
-from pages.pemilik.dashboard import DashboardPenghuni
+from pages.pemilik.dashboard_penghuni import DashboardPenghuni
 from pages.pemilik.daftar_akun_penghuni import DaftarAkunPenghuni
 from pages.pemilik.riwayat_transaksi import RiwayatTransaksi
 from pages.pemilik.feedback_penghuni import FeedbackPenghuni
@@ -109,7 +109,7 @@ class MainViewPemilik(tk.Tk):
         self.title("AnaKosware - Dashboard")
         
         # Import dan tampilkan DashboardPenghuni
-        from pages.pemilik.dashboard import DashboardPenghuni
+        from pages.pemilik.dashboard_penghuni import DashboardPenghuni
         page = DashboardPenghuni(self.page_container, self)
         page.pack(fill=tk.BOTH, expand=True)
     

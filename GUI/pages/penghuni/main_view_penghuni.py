@@ -10,17 +10,16 @@ import tkinter as tk
 from tkinter import messagebox
 
 # Import components
-from components.pemilik.sidebar import Sidebar
-from components.pemilik.header import Header
+from components.penghuni.sidebar import Sidebar
+from components.penghuni.header import Header
 
 # Import pages
-from pages.pemilik.dashboard import DashboardPenghuni
-from pages.pemilik.daftar_akun_penghuni import DaftarAkunPenghuni
-from pages.pemilik.riwayat_transaksi import RiwayatTransaksi
-from pages.pemilik.feedback_penghuni import FeedbackPenghuni
+# from pages.penghuni.homepage import Homepage
+# from pages.penghuni.layanan_kos import LayananKos
+# from pages.penghuni.berikan_feedback import BerikanFeedback
 
 
-class MainViewPemilik(tk.Tk):
+class MainViewPenghuni(tk.Tk):
     """Main application window and controller"""
     
     def __init__(self):
@@ -33,8 +32,8 @@ class MainViewPemilik(tk.Tk):
         self.resizable(False, False)
         
         # Current user info
-        self.current_user_name = "Ibu Kos"
-        self.current_user_role = "Pemilik Kos"
+        self.current_user_name = "Benjamin Franklin"
+        self.current_user_role = "Penghuni Kos"
         
         # Create main layout
         self.create_layout()
@@ -52,7 +51,7 @@ class MainViewPemilik(tk.Tk):
         self.sidebar = Sidebar(
             self.main_container,
             on_menu_click=self.handle_navigation,
-            active_menu='register_tenant'
+            active_menu='homepage'
         )
         self.sidebar.pack(side=tk.LEFT, fill=tk.Y, expand=False)
         
@@ -74,14 +73,12 @@ class MainViewPemilik(tk.Tk):
     
     def handle_navigation(self, menu_id):
         """Handle sidebar menu clicks"""
-        if menu_id == 'dashboard':
+        if menu_id == 'homepage':
             self.show_dashboard()
-        elif menu_id == 'register_tenant':
+        elif menu_id == 'layanan_kos':
             self.show_register_tenant()
-        elif menu_id == 'transaction':
+        elif menu_id == 'berikan_feedback':
             self.show_transaction()
-        elif menu_id == 'feedback':
-            self.show_feedback()
         elif menu_id == 'logout':
             self.handle_logout()
         
@@ -106,36 +103,27 @@ class MainViewPemilik(tk.Tk):
     def show_dashboard(self):
         """Show dashboard page"""
         self.clear_page()
-        self.title("AnaKosware - Dashboard")
+        self.title("AnaKosware - Homepage")
         
         # Import dan tampilkan DashboardPenghuni
-        from pages.pemilik.dashboard import DashboardPenghuni
-        page = DashboardPenghuni(self.page_container, self)
+        from pages.pemilik.homepage import Homepage
+        page = Homepage(self.page_container, self)
         page.pack(fill=tk.BOTH, expand=True)
     
-    def show_register_tenant(self):
+    def layanan_kos(self):
         """Show register tenant page"""
         self.clear_page()
-        self.title("AnaKosware - Daftar Akun Penghuni")
+        self.title("AnaKosware - Layanan Kos")
         
-        page = DaftarAkunPenghuni(self.page_container, self)
-        page.pack(fill=tk.BOTH, expand=True)
+        # page = LayananKos(self.page_container, self)
+        # page.pack(fill=tk.BOTH, expand=True)
     
-    def show_transaction(self):
-        """Show transaction history page"""
+    def berikan_feedback(self):
         self.clear_page()
-        self.title("AnaKosware - Riwayat Transaksi")
+        self.title("AnaKosware - Berikan Feedback")
         
-        page = RiwayatTransaksi(self.page_container, self)
-        page.pack(fill=tk.BOTH, expand=True)
-    
-    def show_feedback(self):
-        """Show feedback page"""
-        self.clear_page()
-        self.title("AnaKosware - Feedback Record")
-        
-        page = FeedbackPenghuni(self.page_container, self)
-        page.pack(fill=tk.BOTH, expand=True)
+        # page = BerikanFeedback(self.page_container, self)
+        # page.pack(fill=tk.BOTH, expand=True)
 
 
     
@@ -146,11 +134,12 @@ class MainViewPemilik(tk.Tk):
             "Apakah Anda yakin ingin logout?"
         )
         
+        # Kembali ke halaman login
         if response:
             print("Logging out...")
             self.destroy()
 
 
 if __name__ == "__main__":
-    app = MainViewPemilik()
+    app = MainViewPenghuni()
     app.mainloop()
