@@ -1,6 +1,11 @@
 """
 Main application (pemilik view) controller for AnaKosware.
 """
+
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
+
 import tkinter as tk
 from tkinter import messagebox
 
@@ -47,8 +52,6 @@ class MainViewPemilik(tk.Tk):
             active_menu='register_tenant'
         )
         self.sidebar.pack(side=tk.LEFT, fill=tk.Y, expand=False)
-
-        # self.sidebar.pack(side=tk.LEFT, fill=tk.Y)
         
         # Content area (right side)
         self.content_area = tk.Frame(self.main_container, bg='white')
@@ -102,15 +105,12 @@ class MainViewPemilik(tk.Tk):
         self.clear_page()
         self.title("AnaKosware - Dashboard")
         
-        # TODO: Import dan tampilkan DashboardView
-        placeholder = tk.Label(
-            self.page_container,
-            text="Dashboard Page\n(Coming Soon)",
-            font=('Arial', 24),
-            bg='white',
-            fg='#999999'
-        )
-        placeholder.pack(expand=True)
+        print("Dashboard sedang dimuat...")
+
+        # Import dan tampilkan DashboardPenghuni
+        from pages.pemilik.dashboard import DashboardPenghuni
+        page = DashboardPenghuni(self.page_container, self)
+        page.pack(fill=tk.BOTH, expand=True)
     
     def show_register_tenant(self):
         """Show register tenant page"""
@@ -163,5 +163,5 @@ class MainViewPemilik(tk.Tk):
 
 
 if __name__ == "__main__":
-    app = AnaKoswareApp()
+    app = MainViewPemilik()
     app.mainloop()
