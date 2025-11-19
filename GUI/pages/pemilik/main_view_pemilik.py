@@ -40,7 +40,7 @@ class MainViewPemilik(tk.Tk):
         self.create_layout()
         
         # Show initial page
-        self.show_register_tenant()
+        self.show_dashboard()
     
     def create_layout(self):
         """Create main application layout"""
@@ -52,7 +52,7 @@ class MainViewPemilik(tk.Tk):
         self.sidebar = Sidebar(
             self.main_container,
             on_menu_click=self.handle_navigation,
-            active_menu='register_tenant'
+            active_menu='dashboard'
         )
         self.sidebar.pack(side=tk.LEFT, fill=tk.Y, expand=False)
         
