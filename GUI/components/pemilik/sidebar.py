@@ -1,5 +1,5 @@
 """
-Sidebar component for AnaKosware application.
+Sidebar component pemilik for AnaKosware application.
 """
 from PIL import Image, ImageTk
 import os
@@ -40,16 +40,6 @@ class Sidebar(tk.Frame):
         # Display the image
         logo_label = tk.Label(logo_frame, image=self.logo_photo, bg='#EFE5B7')
         logo_label.pack()
-
-        # Logo text
-        # logo_text = tk.Label(
-        #     logo_frame,
-        #     text="anakosware",
-        #     font=('Arial', 12, 'bold'),
-        #     bg='#EFE5B7',
-        #     fg='#2D3142'
-        # )
-        # logo_text.pack()
     
     def create_navigation(self):
         """Create navigation menu items"""

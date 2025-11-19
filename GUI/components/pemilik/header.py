@@ -1,5 +1,5 @@
 """
-Header component for AnaKosware application.
+Header component penghuni for AnaKosware application.
 """
 import tkinter as tk
 
