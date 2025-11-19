@@ -14,7 +14,10 @@ from components.pemilik.sidebar import Sidebar
 from components.pemilik.header import Header
 
 # Import pages
+from pages.pemilik.dashboard import DashboardPenghuni
 from pages.pemilik.daftar_akun_penghuni import DaftarAkunPenghuni
+from pages.pemilik.riwayat_transaksi import RiwayatTransaksi
+from pages.pemilik.feedback_penghuni import FeedbackPenghuni
 
 
 class MainViewPemilik(tk.Tk):
@@ -105,8 +108,6 @@ class MainViewPemilik(tk.Tk):
         self.clear_page()
         self.title("AnaKosware - Dashboard")
         
-        print("Dashboard sedang dimuat...")
-
         # Import dan tampilkan DashboardPenghuni
         from pages.pemilik.dashboard import DashboardPenghuni
         page = DashboardPenghuni(self.page_container, self)
@@ -125,30 +126,18 @@ class MainViewPemilik(tk.Tk):
         self.clear_page()
         self.title("AnaKosware - Riwayat Transaksi")
         
-        # TODO: Import dan tampilkan TransactionView
-        placeholder = tk.Label(
-            self.page_container,
-            text="Riwayat Transaksi Page\n(Coming Soon)",
-            font=('Arial', 24),
-            bg='white',
-            fg='#999999'
-        )
-        placeholder.pack(expand=True)
+        page = RiwayatTransaksi(self.page_container, self)
+        page.pack(fill=tk.BOTH, expand=True)
     
     def show_feedback(self):
         """Show feedback page"""
         self.clear_page()
         self.title("AnaKosware - Feedback Record")
         
-        # TODO: Import dan tampilkan FeedbackView
-        placeholder = tk.Label(
-            self.page_container,
-            text="Feedback Record Page\n(Coming Soon)",
-            font=('Arial', 24),
-            bg='white',
-            fg='#999999'
-        )
-        placeholder.pack(expand=True)
+        page = FeedbackPenghuni(self.page_container, self)
+        page.pack(fill=tk.BOTH, expand=True)
+
+
     
     def handle_logout(self):
         """Handle logout"""
