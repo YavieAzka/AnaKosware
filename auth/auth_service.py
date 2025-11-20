@@ -96,6 +96,31 @@ class AuthService:
         }
 
     def nonaktifkan_akun_penghuni(self, username: str) -> dict:
-        raise NotImplementedError(
-            "UC03 (nonaktif akun) belum diimplementasikan."
-        )
+        """
+        Menonaktifkan akun penghuni (status_akun = 0).
+        Hanya untuk user dengan jenis_akun = 'PENGHUNI'.
+        """
+
+        if not username:
+            return {"status": "error", "message": "Username tidak boleh kosong."}
+
+        query = """
+            UPDATE user
+            SET status_akun = 0
+            WHERE username = %s
+              AND jenis_akun = %s
+        """
+        params = (username, "PENGHUNI")
+
+        rowcount = self.db.execute_update(query, params)
+
+        if rowcount:
+            return {
+                "status": "success",
+                "message": f"Akun penghuni '{username}' berhasil dinonaktifkan.",
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"Tidak ada akun penghuni dengan username '{username}'.",
+            }
