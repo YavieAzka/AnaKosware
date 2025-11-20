@@ -51,7 +51,49 @@ class AuthService:
             }
 
     def login(self, jenis_akun: str, username: str, password: str) -> dict:
-        raise NotImplementedError("UC02 (login) belum diimplementasikan.")
+        """
+        Memvalidasi login user.
+        SELECT * FROM user
+        WHERE username = ? AND password = ?
+          AND jenis_akun = ? AND status_akun = 1;
+        """
+
+        if not username or not password:
+            return {
+                "status": "error",
+                "message": "Username/password tidak boleh kosong.",
+            }
+
+        query = """
+            SELECT user_id, username, nama, jenis_akun, status_akun
+            FROM user
+            WHERE username   = %s
+              AND password   = %s
+              AND jenis_akun = %s
+              AND status_akun = 1
+            LIMIT 1
+        """
+        params = (username, password, jenis_akun)
+
+        rows = self.db.execute_query(query, params)
+
+        if not rows:
+            return {
+                "status": "error",
+                "message": "Login gagal. Cek username, password, atau role.",
+            }
+
+        user = rows[0]
+        return {
+            "status": "success",
+            "message": "Login berhasil.",
+            "user": {
+                "user_id": user["user_id"],
+                "username": user["username"],
+                "nama": user["nama"],
+                "jenis_akun": user["jenis_akun"],
+            },
+        }
 
     def nonaktifkan_akun_penghuni(self, username: str) -> dict:
         raise NotImplementedError(
