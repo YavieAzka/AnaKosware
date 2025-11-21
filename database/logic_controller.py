@@ -1,7 +1,8 @@
 # logic_controller.py
-# Modul ini berisi semua logika bisnis dan kueri database untuk AnaKosware.
+# Modul ini berisi semua logika bisnis dan kueri database untuk AnaKosware. 
+# Digunakan untuk testing db_manager.py
 
-# Impor manajer database yang sudah kita buat
+# Impor manajer database yang sudah dibuat
 try:
     from .db_manager import DatabaseManager
 except ImportError:

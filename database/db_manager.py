@@ -88,6 +88,11 @@ class DatabaseManager:
                 print(f"Error saat eksekusi update: {err}")
                 self.connection.rollback() # Rollback jika terjadi error
                 return False
-
+    def get_connection(self):
+        """
+        Mengembalikan objek koneksi mentah untuk keperluan Transaksi manual.
+        """
+        self.connect() # Pastikan terkoneksi
+        return self.connection
 
         
