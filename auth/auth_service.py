@@ -17,8 +17,8 @@ class AuthService:
     def register_penghuni(self, username: str, nama: str, password: str) -> dict:
         """
         Mendaftarkan akun penghuni baru.
-        Asumsi kolom tabel user: user_id, username, nama, password, jenisAkun, status_akun.
-        jenisAkun untuk penghuni: 'PENGHUNI' (ganti kalau di SQL kalian beda).
+        Asumsi kolom tabel user: user_id, username, nama, password, jenis_akun, status_akun.
+        jenis_akun untuk penghuni: 'PENGHUNI' (ganti kalau di SQL kalian beda).
         status_akun: 1 = aktif, 0 = non-aktif.
         """
 
@@ -35,7 +35,7 @@ class AuthService:
             }
 
         query = """
-            INSERT INTO user (username, nama, password, jenisAkun, status_akun)
+            INSERT INTO user (username, nama, password, jenis_akun, status_akun)
             VALUES (%s, %s, %s, %s, %s)
         """
         params = (username, nama, password, "PENGHUNI", 1)
@@ -50,12 +50,12 @@ class AuthService:
                 "message": "Gagal menyimpan data ke database.",
             }
 
-    def login(self, jenisAkun: str, username: str, password: str) -> dict:
+    def login(self, jenis_akun: chr, username: str, password: str) -> dict:
         """
         Memvalidasi login user.
         SELECT * FROM user
         WHERE username = ? AND password = ?
-          AND jenisAkun = ? AND status_akun = 1;
+          AND jenis_akun = ? AND status_akun = 1;
         """
 
         if not username or not password:
@@ -65,15 +65,15 @@ class AuthService:
             }
 
         query = """
-            SELECT user_id, username, nama, jenisAkun, status_akun
+            SELECT user_id, username, nama, jenisAkun, statusAkun
             FROM user
             WHERE username   = %s
               AND password   = %s
               AND jenisAkun = %s
-              AND status_akun = 1
+              AND statusAkun = 1
             LIMIT 1
         """
-        params = (username, password, jenisAkun)
+        params = (username, password, jenis_akun)
 
         rows = self.db.execute_query(query, params)
 
@@ -91,7 +91,7 @@ class AuthService:
                 "user_id": user["user_id"],
                 "username": user["username"],
                 "nama": user["nama"],
-                "jenisAkun": user["jenisAkun"],
+                "jenis_akun": user["jenisAkun"],
             },
         }
 
