@@ -17,8 +17,8 @@ class AuthService:
     def register_penghuni(self, username: str, nama: str, password: str) -> dict:
         """
         Mendaftarkan akun penghuni baru.
-        Asumsi kolom tabel user: user_id, username, nama, password, jenis_akun, status_akun.
-        jenis_akun untuk penghuni: 'PENGHUNI' (ganti kalau di SQL kalian beda).
+        Asumsi kolom tabel user: user_id, username, nama, password, jenisAkun, status_akun.
+        jenisAkun untuk penghuni: 'PENGHUNI' (ganti kalau di SQL kalian beda).
         status_akun: 1 = aktif, 0 = non-aktif.
         """
 
@@ -35,7 +35,7 @@ class AuthService:
             }
 
         query = """
-            INSERT INTO user (username, nama, password, jenis_akun, status_akun)
+            INSERT INTO user (username, nama, password, jenisAkun, status_akun)
             VALUES (%s, %s, %s, %s, %s)
         """
         params = (username, nama, password, "PENGHUNI", 1)
@@ -50,12 +50,12 @@ class AuthService:
                 "message": "Gagal menyimpan data ke database.",
             }
 
-    def login(self, jenis_akun: str, username: str, password: str) -> dict:
+    def login(self, jenisAkun: str, username: str, password: str) -> dict:
         """
         Memvalidasi login user.
         SELECT * FROM user
         WHERE username = ? AND password = ?
-          AND jenis_akun = ? AND status_akun = 1;
+          AND jenisAkun = ? AND status_akun = 1;
         """
 
         if not username or not password:
@@ -65,15 +65,15 @@ class AuthService:
             }
 
         query = """
-            SELECT user_id, username, nama, jenis_akun, status_akun
+            SELECT user_id, username, nama, jenisAkun, status_akun
             FROM user
             WHERE username   = %s
               AND password   = %s
-              AND jenis_akun = %s
+              AND jenisAkun = %s
               AND status_akun = 1
             LIMIT 1
         """
-        params = (username, password, jenis_akun)
+        params = (username, password, jenisAkun)
 
         rows = self.db.execute_query(query, params)
 
@@ -91,14 +91,14 @@ class AuthService:
                 "user_id": user["user_id"],
                 "username": user["username"],
                 "nama": user["nama"],
-                "jenis_akun": user["jenis_akun"],
+                "jenisAkun": user["jenisAkun"],
             },
         }
 
     def nonaktifkan_akun_penghuni(self, username: str) -> dict:
         """
         Menonaktifkan akun penghuni (status_akun = 0).
-        Hanya untuk user dengan jenis_akun = 'PENGHUNI'.
+        Hanya untuk user dengan jenisAkun = 'PENGHUNI'.
         """
 
         if not username:
@@ -108,7 +108,7 @@ class AuthService:
             UPDATE user
             SET status_akun = 0
             WHERE username = %s
-              AND jenis_akun = %s
+              AND jenisAkun = %s
         """
         params = (username, "PENGHUNI")
 
