@@ -1,4 +1,4 @@
-from .db_manager import DatabaseManager
+from database.db_manager import DatabaseManager
 import sys
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel, 
                              QLineEdit, QPushButton, QComboBox, QMessageBox, 

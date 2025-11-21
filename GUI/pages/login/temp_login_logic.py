@@ -1,4 +1,4 @@
-from .db_manager import DatabaseManager
+from database.db_manager import DatabaseManager
 
 class AuthService:
     def __init__(self):
