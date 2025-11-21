@@ -1,313 +1,329 @@
-import tkinter as tk
-from tkinter import ttk, messagebox
+"""
+Riwayat Transaksi page for AnaKosware application - PyQt6 Version
+Style: Modern, Minimalist, Consistent with Dashboard.
+"""
+import sys
+from PyQt6.QtWidgets import (
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
+    QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, 
+    QHeaderView, QAbstractItemView, QFrame, QMessageBox, 
+    QGraphicsDropShadowEffect, QMenu
+)
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QFont, QColor, QCursor, QAction
 
-class RiwayatTransaksi(tk.Frame):
+class RiwayatTransaksi(QWidget):
     """Halaman untuk menampilkan riwayat transaksi"""
     
-    def __init__(self, parent, controller):
-        super().__init__(parent, bg='white')
+    def __init__(self, parent=None, controller=None):
+        super().__init__(parent)
         self.controller = controller
-        self.tree = None
+        
+        # Setup Basic Properties
+        self.setObjectName("TransactionPage")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        
+        # Main Layout
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(40, 40, 40, 40)
+        self.main_layout.setSpacing(20)
+        
+        self._setup_styles()
         self.create_content()
+
+    def _setup_styles(self):
+        """Definisi CSS Global untuk halaman ini"""
+        self.setStyleSheet("""
+            QWidget#TransactionPage {
+                background-color: white;
+            }
+            QLabel#PageTitle {
+                font-family: 'Segoe UI', sans-serif;
+                font-size: 24px;
+                font-weight: bold;
+                color: #2D3142;
+            }
+            /* Search Bar Style */
+            QLineEdit {
+                padding: 10px 15px;
+                border: 1px solid #E0E0E0;
+                border-radius: 8px;
+                background-color: #F8F9FA;
+                font-size: 14px;
+                color: #333333;
+            }
+            QLineEdit:focus {
+                border: 1px solid #4A90E2;
+                background-color: white;
+            }
+            /* Filter Button */
+            QPushButton {
+                padding: 8px 20px;
+                border: 1px solid #E0E0E0;
+                border-radius: 8px;
+                background-color: white;
+                color: #333333;
+                font-weight: 600;
+                font-size: 14px;
+            }
+            QPushButton:hover {
+                background-color: #F5F5F5;
+            }
+            /* Table Style */
+            QTableWidget {
+                background-color: white;
+                border: 1px solid #E0E0E0;
+                gridline-color: #F0F0F0;
+                font-size: 14px;
+            }
+            QHeaderView::section {
+                background-color: #E8D5A8; /* Warna Header Krem Konsisten */
+                color: #333333;
+                padding: 12px;
+                border: none;
+                font-weight: bold;
+                font-family: 'Segoe UI', sans-serif;
+            }
+            QTableWidget::item {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+        """)
 
     def create_content(self):
         """Membuat konten halaman Riwayat Transaksi"""
-        print("Membuat konten Riwayat Transaksi...")
         
-        # Judul Halaman
-        title = tk.Label(
-            self,
-            text="Riwayat Transaksi",
-            font=('Arial', 18, 'bold'),
-            bg='white',
-            fg='#2D3142'
-        )
-        title.pack(pady=(30, 20), padx=40, anchor='w')
+        # 1. Judul Halaman
+        title = QLabel("Riwayat Transaksi")
+        title.setObjectName("PageTitle")
+        self.main_layout.addWidget(title)
         
-        # Frame pencarian dan filter
+        # 2. Search & Filter Section
         self.create_search_filter()
-
-        # Kontainer untuk tabel riwayat transaksi
-        table_outer_frame = tk.Frame(self, bg='#E0E0E0', padx=1, pady=1)
-        table_outer_frame.pack(fill=tk.BOTH, expand=True, padx=40, pady=(10, 40))
-
-        # Data transaksi contoh
+        
+        # 3. Table Section
+        # Data dummy (Logic sama dengan Tkinter)
         self.data = [
-            ["04/17/23", "Rp. 1.000.000", "A01", 1, "Accept"],
-            ["04/17/23", "Rp. 1.000.000", "A01", 1, "Decline"],
-            ["04/17/23", "Rp. 1.000.000", "A01", 1, "Accept"],
-            ["04/17/23", "Rp. 1.000.000", "A01", 1, "Accept"],
-            ["04/17/23", "Rp. 1.000.000", "A01", 1, "Decline"],
+            ["04/17/23", "Rp. 1.000.000", "A01", "1", "Accept"],
+            ["04/17/23", "Rp. 1.000.000", "A01", "1", "Decline"],
+            ["04/17/23", "Rp. 1.000.000", "A01", "1", "Accept"],
+            ["04/17/23", "Rp. 1.000.000", "A01", "1", "Accept"],
+            ["04/17/23", "Rp. 1.000.000", "A01", "1", "Decline"],
         ]
-
-        # Kolom-kolom tabel
+        
         columns = ["Tanggal", "Pemasukan", "Username Penghuni", "Bulan ke-", "Status Pembayaran", "Action"]
-
-        # Membuat tabel untuk riwayat transaksi
-        self.create_table(table_outer_frame, columns, self.data)
-
-        print("Halaman Riwayat Transaksi berhasil dibuat!")
+        self.create_table(columns, self.data)
+        
+        # Spacer di bawah agar rapi
+        self.main_layout.addStretch()
 
     def create_search_filter(self):
         """Membuat bar pencarian dan tombol filter"""
-        search_frame = tk.Frame(self, bg='white')
-        search_frame.pack(fill=tk.X, padx=40, pady=(0, 10))
+        container = QWidget()
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 10)
+        layout.setSpacing(15)
+        
+        # Search Input
+        self.search_entry = QLineEdit()
+        self.search_entry.setPlaceholderText("🔍 Search transaksi...")
+        self.search_entry.setMinimumWidth(300)
+        self.search_entry.textChanged.connect(self.on_search) # Live search
+        
+        # Filter Button
+        filter_btn = QPushButton("Filter ☰")
+        filter_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        filter_btn.clicked.connect(self.show_filter)
+        
+        # Add to layout
+        layout.addWidget(self.search_entry)
+        layout.addStretch()
+        layout.addWidget(filter_btn)
+        
+        self.main_layout.addWidget(container)
 
-        # Kontainer untuk pencarian dengan border
-        search_container = tk.Frame(search_frame, bg='#F0F0F0', relief='solid', borderwidth=1)
-        search_container.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+    def create_table(self, columns, data):
+        """Membuat tabel transaksi"""
+        self.table = QTableWidget()
+        self.table.setColumnCount(len(columns))
+        self.table.setHorizontalHeaderLabels(columns)
+        
+        # Table Properties
+        self.table.setShowGrid(False)
+        self.table.setAlternatingRowColors(True)
+        self.table.verticalHeader().setVisible(False)
+        self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.table.setMinimumHeight(400) 
 
-        # Ikon pencarian (🔍)
-        search_icon = tk.Label(
-            search_container,
-            text="🔍",
-            font=('Arial', 12),
-            bg='#F0F0F0',
-            fg='#666666'
-        )
-        search_icon.pack(side=tk.LEFT, padx=(10, 5))
+        # Header Config
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        
+        # Atur lebar kolom spesifik agar proporsional
+        self.table.setColumnWidth(0, 120) # Tanggal
+        self.table.setColumnWidth(3, 80)  # Bulan ke-
+        self.table.setColumnWidth(5, 80)  # Action
+        
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)
 
-        # Kolom pencarian
-        self.search_entry = tk.Entry(
-            search_container,
-            font=('Arial', 11),
-            bg='#F0F0F0',
-            fg='#333333',
-            relief='flat',
-            borderwidth=0
-        )
-        self.search_entry.insert(0, "Search transaksi")
-        self.search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5, pady=8)
+        # Populate Data
+        self.populate_table(data)
+        
+        # Connect Signals
+        self.table.cellClicked.connect(self.on_cell_click)
+        
+        # Add shadow effect (Estetika)
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(15)
+        shadow.setXOffset(0)
+        shadow.setYOffset(4)
+        shadow.setColor(QColor(0, 0, 0, 20))
+        self.table.setGraphicsEffect(shadow)
 
-        # Placeholder behavior
-        self.search_entry.bind('<FocusIn>', lambda e: self.on_search_focus_in())
-        self.search_entry.bind('<FocusOut>', lambda e: self.on_search_focus_out())
-        self.search_entry.bind('<KeyRelease>', lambda e: self.on_search())
+        self.main_layout.addWidget(self.table)
 
-        # Tombol filter
-        filter_btn = tk.Button(
-            search_frame,
-            text="Filter ☰",
-            font=('Arial', 11),
-            bg='white',
-            fg='#333333',
-            relief='solid',
-            borderwidth=1,
-            padx=20,
-            pady=6,
-            cursor='hand2',
-            command=self.show_filter
-        )
-        filter_btn.pack(side=tk.RIGHT)
+    def populate_table(self, data):
+        """Mengisi data ke tabel dengan styling modern"""
+        self.table.setRowCount(len(data))
+        for i, row_data in enumerate(data):
+            # 0: Tanggal
+            item_date = QTableWidgetItem(row_data[0])
+            item_date.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.table.setItem(i, 0, item_date)
+            
+            # 1: Pemasukan
+            item_price = QTableWidgetItem(row_data[1])
+            item_price.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.table.setItem(i, 1, item_price)
 
-    def on_search_focus_in(self):
-        """Menghapus placeholder saat fokus"""
-        if self.search_entry.get() == "Search transaksi":
-            self.search_entry.delete(0, tk.END)
-            self.search_entry.config(fg='#333333')
+            # 2: Username
+            item_user = QTableWidgetItem(row_data[2])
+            item_user.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.table.setItem(i, 2, item_user)
 
-    def on_search_focus_out(self):
-        """Menambahkan placeholder jika kosong"""
-        if not self.search_entry.get():
-            self.search_entry.insert(0, "Search transaksi")
-            self.search_entry.config(fg='#999999')
+            # 3: Bulan
+            item_month = QTableWidgetItem(str(row_data[3]))
+            item_month.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.table.setItem(i, 3, item_month)
+
+            # 4: Status (Dengan pewarnaan teks)
+            status_text = row_data[4]
+            item_status = QTableWidgetItem(status_text)
+            item_status.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            item_status.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+            
+            if status_text == "Accept":
+                item_status.setForeground(QColor("#28A745")) # Hijau
+            elif status_text == "Decline":
+                item_status.setForeground(QColor("#DC3545")) # Merah
+            
+            self.table.setItem(i, 4, item_status)
+            
+            # 5: Action Icon
+            item_action = QTableWidgetItem("📝")
+            item_action.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            font = QFont()
+            font.setPointSize(12)
+            item_action.setFont(font)
+            self.table.setItem(i, 5, item_action)
 
     def on_search(self):
-        """Memfilter tabel berdasarkan pencarian"""
-        search_text = self.search_entry.get().lower()
-        if search_text == "search transaksi":
-            return
-        
-        # Menghapus item yang ada
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-
-        # Menyaring data yang sesuai
-        for idx, row in enumerate(self.data):
-            if any(search_text in str(field).lower() for field in row):
-                tag = 'evenrow' if idx % 2 == 0 else 'oddrow'
-                self.tree.insert('', tk.END, values=row, tags=(tag,))
+        """Logic pencarian"""
+        search_text = self.search_entry.text().lower()
+        for row in range(self.table.rowCount()):
+            match = False
+            # Search di semua kolom
+            for col in range(self.table.columnCount() - 1):
+                item = self.table.item(row, col)
+                if item and search_text in item.text().lower():
+                    match = True
+                    break
+            self.table.setRowHidden(row, not match)
 
     def show_filter(self):
-        """Menampilkan filter"""
-        messagebox.showinfo("Filter", "Opsi filter akan datang segera!")
+        QMessageBox.information(self, "Filter", "Opsi filter akan datang segera!")
 
-    def create_table(self, parent, columns, data):
-        """Membuat tabel untuk menampilkan data transaksi"""
+    def on_cell_click(self, row, col):
+        """Handle klik pada tabel"""
+        # Kolom 5 adalah Action
+        if col == 5:
+            # Tampilkan menu popup di posisi kursor mouse
+            self.show_action_menu(QCursor.pos(), row)
 
-        # Style konfigurasi
-        style = ttk.Style()
-        style.theme_use('clam')
+    def show_action_menu(self, global_pos, row):
+        """Menampilkan menu konteks (View, Edit, Delete)"""
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu { background-color: white; border: 1px solid #E0E0E0; }
+            QMenu::item { padding: 8px 24px; }
+            QMenu::item:selected { background-color: #F5F5F5; color: black; }
+        """)
 
-        # Konfigurasi style untuk Treeview
-        style.configure(
-            "Custom.Treeview",
-            background="white",
-            foreground="#333333",
-            rowheight=40,
-            fieldbackground="white",
-            borderwidth=0,
-            font=('Arial', 10)
-        )
+        view_action = menu.addAction("👁️  Lihat Detail")
+        edit_action = menu.addAction("✏️   Edit Status")
+        menu.addSeparator()
+        delete_action = menu.addAction("🗑️  Hapus")
 
-        # Konfigurasi header Treeview
-        style.configure(
-            "Custom.Treeview.Heading",
-            background="#E8D5A8",  # Warna kuning krem seperti di desain
-            foreground="#333333",
-            borderwidth=1,
-            relief="flat",
-            font=('Arial', 12, 'bold')
-        )
-
-        style.map(
-            "Custom.Treeview.Heading",
-            background=[('active', '#D4C198')]
-        )
-
-        # Frame tabel
-        table_frame = tk.Frame(parent, bg='white')
-        table_frame.pack(fill=tk.BOTH, expand=True)
-
-        # Scrollbar
-        scrollbar = ttk.Scrollbar(table_frame)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        # Treeview dengan style kustom
-        self.tree = ttk.Treeview(
-            table_frame, 
-            columns=columns, 
-            show="headings",
-            yscrollcommand=scrollbar.set,
-            style="Custom.Treeview"
-        )
-        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-        scrollbar.config(command=self.tree.yview)
-
-        # Menyusun lebar kolom
-        column_widths = {
-            "Tanggal": 120,
-            "Pemasukan": 120,
-            "Username Penghuni": 150,
-            "Bulan ke-": 90,
-            "Status Pembayaran": 140,
-            "Action": 90
-        }
-
-        for col in columns:
-            self.tree.heading(col, text=col)
-            width = column_widths.get(col, 150)
-            self.tree.column(col, width=width, anchor='center')
-
-        # Konfigurasi warna baris
-        self.tree.tag_configure('evenrow', background='#FFFFFF')
-        self.tree.tag_configure('oddrow', background='#FAFAFA')
-
-        # Memasukkan data ke dalam tabel
-        for idx, row in enumerate(data):
-            tag = 'evenrow' if idx % 2 == 0 else 'oddrow'
-            # Menambahkan kolom aksi
-            row_with_action = list(row) + ["📝"]
-            self.tree.insert('', tk.END, values=row_with_action, tags=(tag,))
-
-        # Menyusun event klik pada baris
-        self.tree.bind('<Double-1>', lambda e: self.view_selected())
-        self.tree.bind('<Button-1>', self.on_row_click)
-
-    def on_row_click(self, event):
-        """Menangani klik pada baris tabel"""
-        region = self.tree.identify_region(event.x, event.y)
-        if region == "cell":
-            column = self.tree.identify_column(event.x)
-            selected = self.tree.selection()
-
-            if selected:
-                # Mengecek apakah klik pada kolom Action
-                col_index = int(column.replace('#', '')) - 1
-                if col_index == 5:  # Kolom Action
-                    # Menampilkan menu aksi
-                    self.show_action_menu(event)
-
-    def show_action_menu(self, event):
-        """Menampilkan menu aksi ketika kolom Action diklik"""
-        # Membuat menu popup
-        menu = tk.Menu(self, tearoff=0)
-        menu.add_command(label="👁️ Lihat Detail", command=self.view_selected)
-        menu.add_command(label="✏️     Edit", command=self.edit_selected)
-        menu.add_separator()
-        menu.add_command(label="🗑️ Hapus", command=self.delete_selected)
-
-        # Menampilkan menu pada posisi kursor
-        menu.post(event.x_root, event.y_root)
-
-    def view_selected(self):
-        """Melihat detail transaksi yang dipilih"""
-        selected = self.tree.selection()
-
-        if not selected:
-            messagebox.showwarning("Peringatan", "Pilih transaksi yang ingin dilihat!")
-            return
-
-        item = self.tree.item(selected[0])
-        values = item['values']
-
-        # Menampilkan detail pada message box
-        details = f"""
-            Detail Transaksi:
-
-            Tanggal        : {values[0]}
-            Pemasukan      : {values[1]}
-            Username       : {values[2]}
-            Bulan ke-      : {values[3]}
-            Status Pembayaran: {values[4]}
-        """
+        action = menu.exec(global_pos)
         
-        messagebox.showinfo("Detail Transaksi", details)
+        if action == view_action:
+            self.view_selected(row)
+        elif action == edit_action:
+            self.edit_selected(row)
+        elif action == delete_action:
+            self.delete_selected(row)
 
-    def edit_selected(self):
-        """Edit transaksi yang dipilih"""
-        selected = self.tree.selection()
+    def get_row_data(self, row):
+        """Helper untuk mengambil data baris"""
+        data = []
+        for col in range(5): # Ambil 5 kolom pertama (skip action)
+            data.append(self.table.item(row, col).text())
+        return data
 
-        if not selected:
-            messagebox.showwarning("Peringatan", "Pilih transaksi yang ingin diedit!")
-            return
+    def view_selected(self, row):
+        """Melihat detail transaksi"""
+        values = self.get_row_data(row)
+        details = f"""
+        Detail Transaksi:
+        
+        Tanggal          : {values[0]}
+        Pemasukan        : {values[1]}
+        Username         : {values[2]}
+        Bulan ke-        : {values[3]}
+        Status Pembayaran: {values[4]}
+        """
+        QMessageBox.information(self, "Detail Transaksi", details)
 
-        item = self.tree.item(selected[0])
-        values = item['values']
+    def edit_selected(self, row):
+        """Edit transaksi"""
+        values = self.get_row_data(row)
+        QMessageBox.information(self, "Edit", f"Edit transaksi user: {values[2]}\n(Fitur coming soon)")
 
-        # TODO: Buka halaman edit
-        # Edit status pembayaran saja
-        messagebox.showinfo("Edit", f"Edit transaksi: {values[2]}\n(Fitur coming soon)")
-
-    def delete_selected(self):
-        """Hapus transaksi yang dipilih"""
-        selected = self.tree.selection()
-
-        if not selected:
-            messagebox.showwarning("Peringatan", "Pilih transaksi yang ingin dihapus!")
-            return
-
-        item = self.tree.item(selected[0])
-        values = item['values']
-
-        # Konfirmasi penghapusan
-        response = messagebox.askyesno(
-            "Konfirmasi Hapus",
-            f"Apakah Anda yakin ingin menghapus transaksi:\n{values[2]}?"
+    def delete_selected(self, row):
+        """Hapus transaksi"""
+        values = self.get_row_data(row)
+        response = QMessageBox.question(
+            self, "Konfirmasi Hapus",
+            f"Apakah Anda yakin ingin menghapus transaksi dari:\n{values[2]}?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
 
-        if response:
-            self.tree.delete(selected[0])
-            messagebox.showinfo("Sukses", "Transaksi berhasil dihapus!")
+        if response == QMessageBox.StandardButton.Yes:
+            self.table.removeRow(row)
+            QMessageBox.information(self, "Sukses", "Transaksi berhasil dihapus!")
 
-# Test standalone
+# --- Test Standalone ---
 if __name__ == "__main__":
-    root = tk.Tk()
-    root.geometry("1200x800")
-    root.title("Riwayat Transaksi")
-
-    app = RiwayatTransaksi(root, None)
-    app.pack(fill=tk.BOTH, expand=True)
-
-    root.mainloop()
+    app = QApplication(sys.argv)
+    app.setFont(QFont("Segoe UI", 10))
+    
+    window = RiwayatTransaksi()
+    window.resize(1000, 600)
+    window.show()
+    
+    sys.exit(app.exec())

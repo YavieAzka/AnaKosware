@@ -1,718 +1,283 @@
-# # import tkinter as tk
-# # from tkinter import ttk, messagebox
-
-# # class FeedbackPenghuni(tk.Frame):
-# #     """Halaman untuk menampilkan feedback penghuni"""
-    
-# #     def __init__(self, parent, controller):
-# #         super().__init__(parent, bg='white')
-# #         self.controller = controller
-# #         self.tree = None
-# #         self.create_content()
-    
-# #     def create_content(self):
-# #         """Membuat konten halaman Feedback Penghuni"""
-# #         print("Membuat konten Feedback Penghuni...")
-        
-# #         # Judul Halaman
-# #         title = tk.Label(
-# #             self,
-# #             text="Record Feedback Penghuni",
-# #             font=('Arial', 18, 'bold'),
-# #             bg='white',
-# #             fg='#2D3142'
-# #         )
-# #         title.pack(pady=(30, 20), padx=40, anchor='w')
-        
-# #         # Frame pencarian dan filter
-# #         self.create_search_filter()
-
-# #         # Kontainer untuk tabel feedback penghuni
-# #         table_outer_frame = tk.Frame(self, bg='#E0E0E0', padx=1, pady=1)
-# #         table_outer_frame.pack(fill=tk.BOTH, expand=True, padx=40, pady=(10, 40))
-
-# #         # Data feedback penghuni contoh
-# #         self.data = [
-# #             ["04/17/23", "A01\nLeslie Alexander", "Saya merasa sangat puas dengan pelayanan Kos Melati, pelayanan sangat lengkap dan rumahnya nyaman serta bersih", "★★★★★"],
-# #             ["04/17/23", "A01\nLeslie Alexander", "Saya merasa sangat puas dengan pelayanan Kos Melati, pelayanan sangat lengkap dan rumahnya nyaman serta bersih", "★★★★★"],
-# #             ["04/17/23", "A01\nLeslie Alexander", "Saya merasa sangat puas dengan pelayanan Kos Melati, pelayanan sangat lengkap dan rumahnya nyaman serta bersih", "★★★★★"],
-# #             ["04/17/23", "A01\nLeslie Alexander", "Saya merasa sangat puas dengan pelayanan Kos Melati, pelayanan sangat lengkap dan rumahnya nyaman serta bersih", "★★★★★"],
-# #             ["04/17/23", "A01\nLeslie Alexander", "Saya merasa sangat puas dengan pelayanan Kos Melati, pelayanan sangat lengkap dan rumahnya nyaman serta bersih", "★★★★★"],
-# #         ]
-
-# #         # Kolom tabel
-# #         columns = ["Tanggal", "Penghuni", "Pesan Feedback", "Rating"]
-
-# #         # Membuat Treeview untuk feedback penghuni
-# #         self.create_table(table_outer_frame, columns, self.data)
-    
-# #     def create_search_filter(self):
-# #         """Membuat bar pencarian dan tombol filter"""
-# #         search_frame = tk.Frame(self, bg='white')
-# #         search_frame.pack(fill=tk.X, padx=40, pady=(0, 10))
-
-# #         # Kontainer untuk pencarian dengan border
-# #         search_container = tk.Frame(search_frame, bg='#F0F0F0', relief='solid', borderwidth=1)
-# #         search_container.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
-
-# #         # Ikon pencarian (🔍)
-# #         search_icon = tk.Label(
-# #             search_container,
-# #             text="🔍",
-# #             font=('Arial', 12),
-# #             bg='#F0F0F0',
-# #             fg='#666666'
-# #         )
-# #         search_icon.pack(side=tk.LEFT, padx=(10, 5))
-
-# #         # Kolom pencarian
-# #         self.search_entry = tk.Entry(
-# #             search_container,
-# #             font=('Arial', 11),
-# #             bg='#F0F0F0',
-# #             fg='#333333',
-# #             relief='flat',
-# #             borderwidth=0
-# #         )
-# #         self.search_entry.insert(0, "Search feedback")
-# #         self.search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5, pady=8)
-
-# #         # Placeholder behavior
-# #         self.search_entry.bind('<FocusIn>', lambda e: self.on_search_focus_in())
-# #         self.search_entry.bind('<FocusOut>', lambda e: self.on_search_focus_out())
-# #         self.search_entry.bind('<KeyRelease>', lambda e: self.on_search())
-
-# #         # Tombol filter
-# #         filter_btn = tk.Button(
-# #             search_frame,
-# #             text="Filter ☰",
-# #             font=('Arial', 11),
-# #             bg='white',
-# #             fg='#333333',
-# #             relief='solid',
-# #             borderwidth=1,
-# #             padx=20,
-# #             pady=6,
-# #             cursor='hand2',
-# #             command=self.show_filter
-# #         )
-# #         filter_btn.pack(side=tk.RIGHT)
-
-# #     def on_search_focus_in(self):
-# #         """Menghapus placeholder saat fokus"""
-# #         if self.search_entry.get() == "Search feedback":
-# #             self.search_entry.delete(0, tk.END)
-# #             self.search_entry.config(fg='#333333')
-
-# #     def on_search_focus_out(self):
-# #         """Menambahkan placeholder jika kosong"""
-# #         if not self.search_entry.get():
-# #             self.search_entry.insert(0, "Search feedback")
-# #             self.search_entry.config(fg='#999999')
-
-# #     def on_search(self):
-# #         """Memfilter tabel berdasarkan pencarian"""
-# #         search_text = self.search_entry.get().lower()
-# #         if search_text == "search feedback":
-# #             return
-        
-# #         # Menghapus item yang ada
-# #         for item in self.tree.get_children():
-# #             self.tree.delete(item)
-
-# #         # Menyaring data yang sesuai
-# #         for idx, row in enumerate(self.data):
-# #             if any(search_text in str(field).lower() for field in row):
-# #                 tag = 'evenrow' if idx % 2 == 0 else 'oddrow'
-# #                 self.tree.insert('', tk.END, values=row, tags=(tag,))
-
-# #     def show_filter(self):
-# #         """Menampilkan filter"""
-# #         messagebox.showinfo("Filter", "Opsi filter akan datang segera!")
-
-# #     def create_table(self, parent, columns, data):
-# #         """Membuat tabel untuk menampilkan feedback penghuni"""
-
-# #         # Style konfigurasi
-# #         style = ttk.Style()
-# #         style.theme_use('clam')
-
-# #         # Konfigurasi style untuk Treeview
-# #         style.configure(
-# #             "Custom.Treeview",
-# #             background="white",
-# #             foreground="#333333",
-# #             rowheight=40,
-# #             fieldbackground="white",
-# #             borderwidth=0,
-# #             font=('Arial', 10)
-# #         )
-
-# #         # Konfigurasi header Treeview
-# #         style.configure(
-# #             "Custom.Treeview.Heading",
-# #             background="#E8D5A8",  # Warna kuning krem seperti di desain
-# #             foreground="#333333",
-# #             borderwidth=1,
-# #             relief="flat",
-# #             font=('Arial', 10, 'bold')
-# #         )
-
-# #         style.map(
-# #             "Custom.Treeview.Heading",
-# #             background=[('active', '#D4C198')]
-# #         )
-
-# #         # Frame tabel
-# #         table_frame = tk.Frame(parent, bg='white')
-# #         table_frame.pack(fill=tk.BOTH, expand=True)
-
-# #         # Scrollbar
-# #         scrollbar = ttk.Scrollbar(table_frame)
-# #         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-# #         # Treeview dengan style kustom
-# #         self.tree = ttk.Treeview(
-# #             table_frame, 
-# #             columns=columns, 
-# #             show="headings",
-# #             yscrollcommand=scrollbar.set,
-# #             style="Custom.Treeview"
-# #         )
-# #         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-# #         scrollbar.config(command=self.tree.yview)
-
-# #         # Menyusun lebar kolom
-# #         column_widths = {
-# #             "Tanggal": 100,
-# #             "Penghuni": 170,
-# #             "Pesan Feedback": 350,
-# #             "Rating": 100,
-# #         }
-
-# #         for col in columns:
-# #             self.tree.heading(col, text=col)
-# #             width = column_widths.get(col, 150)
-# #             self.tree.column(col, width=width, anchor='center')
-
-# #         # Menyusun tag warna untuk baris
-# #         self.tree.tag_configure('evenrow', background='#FFFFFF')
-# #         self.tree.tag_configure('oddrow', background='#FAFAFA')
-
-# #         # Menambahkan data ke dalam tabel
-# #         for idx, row in enumerate(data):
-# #             tag = 'evenrow' if idx % 2 == 0 else 'oddrow'
-# #             # Menambahkan kolom aksi
-# #             row_with_action = list(row) + ["📝"]
-# #             self.tree.insert('', tk.END, values=row_with_action, tags=(tag,))
-
-# # # Menjalankan aplikasi
-# # if __name__ == "__main__":
-# #     root = tk.Tk()
-# #     root.geometry("1200x800")
-# #     root.title("Feedback Penghuni")
-
-# #     app = FeedbackPenghuni(root, None)
-# #     app.pack(fill=tk.BOTH, expand=True)
-
-# #     root.mainloop()
-
-# import tkinter as tk
-# from tkinter import ttk, messagebox
-
-# class FeedbackPenghuni(tk.Frame):
-#     """Halaman untuk menampilkan feedback penghuni"""
-    
-#     def __init__(self, parent, controller):
-#         super().__init__(parent, bg='white')
-#         self.controller = controller
-#         self.tree = None
-#         self.create_content()
-    
-#     def create_content(self):
-#         """Membuat konten halaman Feedback Penghuni"""
-#         print("Membuat konten Feedback Penghuni...")
-        
-#         # Judul Halaman
-#         title = tk.Label(
-#             self,
-#             text="Record Feedback Penghuni",
-#             font=('Arial', 18, 'bold'),
-#             bg='white',
-#             fg='#2D3142'
-#         )
-#         title.pack(pady=(30, 20), padx=40, anchor='w')
-        
-#         # Frame pencarian dan filter
-#         self.create_search_filter()
-
-#         # Kontainer untuk tabel feedback penghuni
-#         table_outer_frame = tk.Frame(self, bg='#E0E0E0', padx=1, pady=1)
-#         table_outer_frame.pack(fill=tk.BOTH, expand=True, padx=40, pady=(10, 40))
-
-#         # Data feedback penghuni contoh
-#         self.data = [
-#             ["04/17/23", "A01", "Leslie Alexander", "Saya merasa sangat puas dengan pelayanan Kos Melati, pelayanan sangat lengkap dan rumahnya nyaman serta bersih.", "★★★★★"],
-#             ["04/17/23", "A01", "Benjamin Franklin", "Pelayanan Kos ini cukup baik, namun ada beberapa area yang bisa diperbaiki, terutama kebersihan di sekitar.", "★★★★"],
-#             ["04/17/23", "A02", "John Doe", "Kamar sangat nyaman dan fasilitas lengkap, saya merasa sangat nyaman tinggal di sini selama beberapa minggu.", "★★★★★"],
-#             ["04/17/23", "A03", "Alice Johnson", "Kos ini cukup nyaman, tetapi harga sedikit lebih mahal dibandingkan dengan kos lainnya di daerah ini.", "★★★"],
-#         ]
-
-#         # Kolom tabel
-#         columns = ["Tanggal", "Penghuni", "Pesan Feedback", "Rating", "Action"]
-
-#         # Membuat Treeview untuk feedback penghuni
-#         self.create_table(table_outer_frame, columns, self.data)
-    
-#     def create_search_filter(self):
-#         """Membuat bar pencarian dan tombol filter"""
-#         search_frame = tk.Frame(self, bg='white')
-#         search_frame.pack(fill=tk.X, padx=40, pady=(0, 10))
-
-#         # Kontainer untuk pencarian dengan border
-#         search_container = tk.Frame(search_frame, bg='#F0F0F0', relief='solid', borderwidth=1)
-#         search_container.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
-
-#         # Ikon pencarian (🔍)
-#         search_icon = tk.Label(
-#             search_container,
-#             text="🔍",
-#             font=('Arial', 12),
-#             bg='#F0F0F0',
-#             fg='#666666'
-#         )
-#         search_icon.pack(side=tk.LEFT, padx=(10, 5))
-
-#         # Kolom pencarian
-#         self.search_entry = tk.Entry(
-#             search_container,
-#             font=('Arial', 11),
-#             bg='#F0F0F0',
-#             fg='#333333',
-#             relief='flat',
-#             borderwidth=0
-#         )
-#         self.search_entry.insert(0, "Search feedback")
-#         self.search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5, pady=8)
-
-#         # Placeholder behavior
-#         self.search_entry.bind('<FocusIn>', lambda e: self.on_search_focus_in())
-#         self.search_entry.bind('<FocusOut>', lambda e: self.on_search_focus_out())
-#         self.search_entry.bind('<KeyRelease>', lambda e: self.on_search())
-
-#         # Tombol filter
-#         filter_btn = tk.Button(
-#             search_frame,
-#             text="Filter ☰",
-#             font=('Arial', 11),
-#             bg='white',
-#             fg='#333333',
-#             relief='solid',
-#             borderwidth=1,
-#             padx=20,
-#             pady=6,
-#             cursor='hand2',
-#             command=self.show_filter
-#         )
-#         filter_btn.pack(side=tk.RIGHT)
-
-#     def on_search_focus_in(self):
-#         """Menghapus placeholder saat fokus"""
-#         if self.search_entry.get() == "Search feedback":
-#             self.search_entry.delete(0, tk.END)
-#             self.search_entry.config(fg='#333333')
-
-#     def on_search_focus_out(self):
-#         """Menambahkan placeholder jika kosong"""
-#         if not self.search_entry.get():
-#             self.search_entry.insert(0, "Search feedback")
-#             self.search_entry.config(fg='#999999')
-
-#     def on_search(self):
-#         """Memfilter tabel berdasarkan pencarian"""
-#         search_text = self.search_entry.get().lower()
-#         if search_text == "search feedback":
-#             return
-        
-#         # Menghapus item yang ada
-#         for item in self.tree.get_children():
-#             self.tree.delete(item)
-
-#         # Menyaring data yang sesuai
-#         for idx, row in enumerate(self.data):
-#             if any(search_text in str(field).lower() for field in row):
-#                 tag = 'evenrow' if idx % 2 == 0 else 'oddrow'
-#                 self.tree.insert('', tk.END, values=row, tags=(tag,))
-
-#     def show_filter(self):
-#         """Menampilkan filter"""
-#         messagebox.showinfo("Filter", "Opsi filter akan datang segera!")
-
-#     def create_table(self, parent, columns, data):
-#         """Membuat tabel untuk menampilkan feedback penghuni"""
-
-#         # Style konfigurasi
-#         style = ttk.Style()
-#         style.theme_use('clam')
-
-#         # Konfigurasi style untuk Treeview
-#         style.configure(
-#             "Custom.Treeview",
-#             background="white",
-#             foreground="#333333",
-#             rowheight=40,
-#             fieldbackground="white",
-#             borderwidth=0,
-#             font=('Arial', 10)
-#         )
-
-#         # Konfigurasi header Treeview
-#         style.configure(
-#             "Custom.Treeview.Heading",
-#             background="#E8D5A8",  # Warna kuning krem seperti di desain
-#             foreground="#333333",
-#             borderwidth=1,
-#             relief="flat",
-#             font=('Arial', 10, 'bold')
-#         )
-
-#         style.map(
-#             "Custom.Treeview.Heading",
-#             background=[('active', '#D4C198')]
-#         )
-
-#         # Frame tabel
-#         table_frame = tk.Frame(parent, bg='white')
-#         table_frame.pack(fill=tk.BOTH, expand=True)
-
-#         # Scrollbar
-#         scrollbar = ttk.Scrollbar(table_frame)
-#         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-#         # Treeview dengan style kustom
-#         self.tree = ttk.Treeview(
-#             table_frame, 
-#             columns=columns, 
-#             show="headings",
-#             yscrollcommand=scrollbar.set,
-#             style="Custom.Treeview"
-#         )
-#         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-#         scrollbar.config(command=self.tree.yview)
-
-#         # Menyusun lebar kolom
-#         column_widths = {
-#             "Tanggal": 120,
-#             "Penghuni": 150,
-#             "Pesan Feedback": 250,
-#             "Rating": 100,
-#             "Action": 100
-#         }
-
-#         for col in columns:
-#             self.tree.heading(col, text=col)
-#             width = column_widths.get(col, 150)
-#             self.tree.column(col, width=width, anchor='w')  # Rata kiri untuk "Penghuni" dan "Pesan Feedback"
-
-#         # Menyusun tag warna untuk baris
-#         self.tree.tag_configure('evenrow', background='#FFFFFF')
-#         self.tree.tag_configure('oddrow', background='#FAFAFA')
-
-#         # Menambahkan data ke dalam tabel
-#         for idx, row in enumerate(data):
-#             tag = 'evenrow' if idx % 2 == 0 else 'oddrow'
-#             # Menambahkan kolom aksi
-#             row_with_action = list(row) + ["📝"]
-#             item = self.tree.insert('', tk.END, values=row_with_action, tags=(tag,))
-#             # Menambahkan event klik pada "📝" untuk melihat detail feedback
-#             self.tree.bind('<ButtonRelease-1>', lambda event, item=item: self.view_feedback(event, item))
-    
-#     def view_feedback(self, event, item):
-#         """Menampilkan feedback lengkap dalam jendela baru"""
-#         # Ambil seluruh nilai data dari baris yang dipilih
-#         values = self.tree.item(item)["values"]
-#         feedback = values[2]  # Kolom Pesan Feedback
-
-#         # Membuka jendela pop-up untuk menampilkan feedback lengkap
-#         view_window = tk.Toplevel(self)
-#         view_window.title("View Feedback")
-#         view_window.geometry("500x350")
-
-#         feedback_text = f"""
-#         Tanggal         : {values[0]}
-#         Penghuni        : {values[1]}
-#         Pesan Feedback  : {feedback}
-#         Rating          : {values[3]}
-#         """
-
-#         label = tk.Label(
-#             view_window,
-#             text=feedback_text,
-#             font=("Arial", 12),
-#             wraplength=480,  # Membungkus teks jika terlalu panjang
-#             justify="left"
-#         )
-#         label.pack(padx=10, pady=10)
-
-# # Menjalankan aplikasi
-# if __name__ == "__main__":
-#     root = tk.Tk()
-#     root.geometry("1200x800")
-#     root.title("Feedback Penghuni")
-
-#     app = FeedbackPenghuni(root, None)
-#     app.pack(fill=tk.BOTH, expand=True)
-
-#     root.mainloop()
-
-import tkinter as tk
-from tkinter import ttk, messagebox
-
-class FeedbackPenghuni(tk.Frame):
+"""
+Feedback Penghuni page for AnaKosware application - PyQt6 Version
+Style: Modern, Minimalist, Consistent with Dashboard.
+"""
+import sys
+from PyQt6.QtWidgets import (
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
+    QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, 
+    QHeaderView, QAbstractItemView, QFrame, QMessageBox, 
+    QGraphicsDropShadowEffect
+)
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QFont, QColor, QCursor
+
+class FeedbackPenghuni(QWidget):
     """Halaman untuk menampilkan feedback penghuni"""
     
-    def __init__(self, parent, controller):
-        super().__init__(parent, bg='white')
+    def __init__(self, parent=None, controller=None):
+        super().__init__(parent)
         self.controller = controller
-        self.tree = None
+        
+        # Setup Basic Properties
+        self.setObjectName("FeedbackPage")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        
+        # Main Layout
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(40, 40, 40, 40)
+        self.main_layout.setSpacing(20)
+        
+        self._setup_styles()
         self.create_content()
-    
+
+    def _setup_styles(self):
+        """Definisi CSS Global untuk halaman ini"""
+        self.setStyleSheet("""
+            QWidget#FeedbackPage {
+                background-color: white;
+            }
+            QLabel#PageTitle {
+                font-family: 'Segoe UI', sans-serif;
+                font-size: 24px;
+                font-weight: bold;
+                color: #2D3142;
+            }
+            /* Search Bar Style */
+            QLineEdit {
+                padding: 10px 15px;
+                border: 1px solid #E0E0E0;
+                border-radius: 8px;
+                background-color: #F8F9FA;
+                font-size: 14px;
+                color: #333333;
+            }
+            QLineEdit:focus {
+                border: 1px solid #4A90E2;
+                background-color: white;
+            }
+            /* Filter Button */
+            QPushButton {
+                padding: 8px 20px;
+                border: 1px solid #E0E0E0;
+                border-radius: 8px;
+                background-color: white;
+                color: #333333;
+                font-weight: 600;
+                font-size: 14px;
+            }
+            QPushButton:hover {
+                background-color: #F5F5F5;
+            }
+            /* Table Style */
+            QTableWidget {
+                background-color: white;
+                border: 1px solid #E0E0E0;
+                gridline-color: #F0F0F0;
+                font-size: 14px;
+            }
+            QHeaderView::section {
+                background-color: #E8D5A8; /* Kuning Krem */
+                color: #333333;
+                padding: 12px;
+                border: none;
+                font-weight: bold;
+                font-family: 'Segoe UI', sans-serif;
+            }
+            QTableWidget::item {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+        """)
+
     def create_content(self):
         """Membuat konten halaman Feedback Penghuni"""
-        print("Membuat konten Feedback Penghuni...")
         
-        # Judul Halaman
-        title = tk.Label(
-            self,
-            text="Record Feedback Penghuni",
-            font=('Arial', 18, 'bold'),
-            bg='white',
-            fg='#2D3142'
-        )
-        title.pack(pady=(30, 20), padx=40, anchor='w')
+        # 1. Judul Halaman
+        title = QLabel("Record Feedback Penghuni")
+        title.setObjectName("PageTitle")
+        self.main_layout.addWidget(title)
         
-        # Frame pencarian dan filter
+        # 2. Search & Filter Section
         self.create_search_filter()
-
-        # Kontainer untuk tabel feedback penghuni
-        table_outer_frame = tk.Frame(self, bg='#E0E0E0', padx=1, pady=1)
-        table_outer_frame.pack(fill=tk.BOTH, expand=True, padx=40, pady=(10, 40))
-
-        # Data feedback penghuni contoh
+        
+        # 3. Table Section
+        # Data dummy
         self.data = [
-            ["04/17/23", "A01\nLeslie Alexander", "Saya merasa sangat puas dengan pelayanan Kos Melati, pelayanan sangat lengkap dan rumahnya nyaman serta bersih.", "★★★★★"],
-            ["04/17/23", "A01\nBenjamin Franklin", "Pelayanan Kos ini cukup baik, namun ada beberapa area yang bisa diperbaiki, terutama kebersihan di sekitar.", "★★★★"],
-            ["04/17/23", "A02\nJohn Doe", "Kamar sangat nyaman dan fasilitas lengkap, saya merasa sangat nyaman tinggal di sini selama beberapa minggu.", "★★★★★"],
-            ["04/17/23", "A03\nAlice Johnson", "Kos ini cukup nyaman, tetapi harga sedikit lebih mahal dibandingkan dengan kos lainnya di daerah ini.", "★★★"],
+            ["04/17/23", "A01 - Leslie Alexander", "Saya merasa sangat puas dengan pelayanan Kos Melati, pelayanan sangat lengkap dan rumahnya nyaman serta bersih.", "★★★★★"],
+            ["04/17/23", "A01 - Benjamin Franklin", "Pelayanan Kos ini cukup baik, namun ada beberapa area yang bisa diperbaiki, terutama kebersihan di sekitar.", "★★★★"],
+            ["04/17/23", "A02 - John Doe", "Kamar sangat nyaman dan fasilitas lengkap, saya merasa sangat nyaman tinggal di sini selama beberapa minggu.", "★★★★★"],
+            ["04/17/23", "A03 - Alice Johnson", "Kos ini cukup nyaman, tetapi harga sedikit lebih mahal dibandingkan dengan kos lainnya di daerah ini.", "★★★"],
         ]
+        
+        columns = ["Tanggal", "Penghuni", "Pesan Feedback", "Rating", "Action"]
+        self.create_table(columns, self.data)
+        
+        # Spacer di bawah agar rapi
+        self.main_layout.addStretch()
 
-        # Kolom tabel
-        columns = ["Tanggal", "Penghuni", "Pesan Feedback", "Rating"]
-
-        # Membuat Treeview untuk feedback penghuni
-        self.create_table(table_outer_frame, columns, self.data)
-    
     def create_search_filter(self):
         """Membuat bar pencarian dan tombol filter"""
-        search_frame = tk.Frame(self, bg='white')
-        search_frame.pack(fill=tk.X, padx=40, pady=(0, 10))
+        container = QWidget()
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 10) # Margin bawah
+        layout.setSpacing(15)
+        
+        # Search Input
+        self.search_entry = QLineEdit()
+        self.search_entry.setPlaceholderText("🔍 Search feedback...")
+        self.search_entry.setMinimumWidth(300)
+        self.search_entry.textChanged.connect(self.on_search) # Live search logic
+        
+        # Filter Button
+        filter_btn = QPushButton("Filter ☰")
+        filter_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        filter_btn.clicked.connect(self.show_filter)
+        
+        # Add to layout
+        layout.addWidget(self.search_entry)
+        layout.addStretch() # Spacer tengah
+        layout.addWidget(filter_btn)
+        
+        self.main_layout.addWidget(container)
 
-        # Kontainer untuk pencarian dengan border
-        search_container = tk.Frame(search_frame, bg='#F0F0F0', relief='solid', borderwidth=1)
-        search_container.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+    def create_table(self, columns, data):
+        """Membuat tabel feedback"""
+        self.table = QTableWidget()
+        self.table.setColumnCount(len(columns))
+        self.table.setHorizontalHeaderLabels(columns)
+        
+        # Table Properties
+        self.table.setShowGrid(False)
+        self.table.setAlternatingRowColors(True)
+        self.table.verticalHeader().setVisible(False)
+        self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.table.setMinimumHeight(400) # Tinggi minimum tabel
 
-        # Ikon pencarian (🔍)
-        search_icon = tk.Label(
-            search_container,
-            text="🔍",
-            font=('Arial', 12),
-            bg='#F0F0F0',
-            fg='#666666'
-        )
-        search_icon.pack(side=tk.LEFT, padx=(10, 5))
+        # Header Config
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch) # Kolom Pesan stretch
+        
+        # Set Initial Column Widths
+        self.table.setColumnWidth(0, 120) # Tanggal
+        self.table.setColumnWidth(1, 200) # Penghuni
+        self.table.setColumnWidth(3, 100) # Rating
+        self.table.setColumnWidth(4, 80)  # Action
 
-        # Kolom pencarian
-        self.search_entry = tk.Entry(
-            search_container,
-            font=('Arial', 11),
-            bg='#F0F0F0',
-            fg='#333333',
-            relief='flat',
-            borderwidth=0
-        )
-        self.search_entry.insert(0, "Search feedback")
-        self.search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5, pady=8)
+        # Populate Data
+        self.populate_table(data)
+        
+        # Connect Signals
+        self.table.cellClicked.connect(self.on_cell_click)
+        
+        # Add shadow to table container effect
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(15)
+        shadow.setXOffset(0)
+        shadow.setYOffset(4)
+        shadow.setColor(QColor(0, 0, 0, 20))
+        self.table.setGraphicsEffect(shadow)
 
-        # Placeholder behavior
-        self.search_entry.bind('<FocusIn>', lambda e: self.on_search_focus_in())
-        self.search_entry.bind('<FocusOut>', lambda e: self.on_search_focus_out())
-        self.search_entry.bind('<KeyRelease>', lambda e: self.on_search())
+        self.main_layout.addWidget(self.table)
 
-        # Tombol filter
-        filter_btn = tk.Button(
-            search_frame,
-            text="Filter ☰",
-            font=('Arial', 11),
-            bg='white',
-            fg='#333333',
-            relief='solid',
-            borderwidth=1,
-            padx=20,
-            pady=6,
-            cursor='hand2',
-            command=self.show_filter
-        )
-        filter_btn.pack(side=tk.RIGHT)
-
-    def on_search_focus_in(self):
-        """Menghapus placeholder saat fokus"""
-        if self.search_entry.get() == "Search feedback":
-            self.search_entry.delete(0, tk.END)
-            self.search_entry.config(fg='#333333')
-
-    def on_search_focus_out(self):
-        """Menambahkan placeholder jika kosong"""
-        if not self.search_entry.get():
-            self.search_entry.insert(0, "Search feedback")
-            self.search_entry.config(fg='#999999')
+    def populate_table(self, data):
+        """Mengisi data ke tabel"""
+        self.table.setRowCount(len(data))
+        for i, row_data in enumerate(data):
+            # Tanggal
+            item_date = QTableWidgetItem(row_data[0])
+            item_date.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.table.setItem(i, 0, item_date)
+            
+            # Penghuni
+            self.table.setItem(i, 1, QTableWidgetItem(row_data[1]))
+            
+            # Pesan (Truncate visual handled by Qt usually, but let's keep it clean)
+            self.table.setItem(i, 2, QTableWidgetItem(row_data[2]))
+            
+            # Rating
+            item_rating = QTableWidgetItem(row_data[3])
+            item_rating.setForeground(QColor("#FFB400")) # Warna Emas/Oranye untuk bintang
+            item_rating.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            font = QFont()
+            font.setPointSize(14) # Bintang lebih besar
+            item_rating.setFont(font)
+            self.table.setItem(i, 3, item_rating)
+            
+            # Action Icon
+            item_action = QTableWidgetItem("📝")
+            item_action.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            action_font = QFont()
+            action_font.setPointSize(12)
+            item_action.setFont(action_font)
+            self.table.setItem(i, 4, item_action)
+            
+            # Set row height agar pesan panjang muat (opsional, atau biarkan single line)
+            self.table.setRowHeight(i, 50)
 
     def on_search(self):
-        """Memfilter tabel berdasarkan pencarian"""
-        search_text = self.search_entry.get().lower()
-        if search_text == "search feedback":
-            return
+        """Logic pencarian"""
+        search_text = self.search_entry.text().lower()
         
-        # Menghapus item yang ada
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-
-        # Menyaring data yang sesuai
-        for idx, row in enumerate(self.data):
-            if any(search_text in str(field).lower() for field in row):
-                tag = 'evenrow' if idx % 2 == 0 else 'oddrow'
-                self.tree.insert('', tk.END, values=row, tags=(tag,))
+        for row in range(self.table.rowCount()):
+            match = False
+            # Cek kolom Penghuni (1) dan Pesan (2)
+            item_penghuni = self.table.item(row, 1)
+            item_pesan = self.table.item(row, 2)
+            
+            if (item_penghuni and search_text in item_penghuni.text().lower()) or \
+               (item_pesan and search_text in item_pesan.text().lower()):
+                match = True
+            
+            self.table.setRowHidden(row, not match)
 
     def show_filter(self):
-        """Menampilkan filter"""
-        messagebox.showinfo("Filter", "Opsi filter akan datang segera!")
+        QMessageBox.information(self, "Filter", "Opsi filter akan datang segera!")
 
-    def create_table(self, parent, columns, data):
-        """Membuat tabel untuk menampilkan feedback penghuni"""
+    def on_cell_click(self, row, col):
+        """Handle klik pada tabel (khususnya kolom Action)"""
+        # Kolom 4 adalah kolom Action
+        if col == 4:
+            self.view_feedback(row)
 
-        # Style konfigurasi
-        style = ttk.Style()
-        style.theme_use('clam')
-
-        # Konfigurasi style untuk Treeview
-        style.configure(
-            "Custom.Treeview",
-            background="white",
-            foreground="#333333",
-            rowheight=40,
-            fieldbackground="white",
-            borderwidth=0,
-            font=('Arial', 10)
-        )
-
-        # Konfigurasi header Treeview
-        style.configure(
-            "Custom.Treeview.Heading",
-            background="#E8D5A8",  # Warna kuning krem seperti di desain
-            foreground="#333333",
-            borderwidth=1,
-            relief="flat",
-            font=('Arial', 10, 'bold')
-        )
-
-        style.map(
-            "Custom.Treeview.Heading",
-            background=[('active', '#D4C198')]
-        )
-
-        # Frame tabel
-        table_frame = tk.Frame(parent, bg='white')
-        table_frame.pack(fill=tk.BOTH, expand=True)
-
-        # Scrollbar
-        scrollbar = ttk.Scrollbar(table_frame)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        # Treeview dengan style kustom
-        self.tree = ttk.Treeview(
-            table_frame, 
-            columns=columns, 
-            show="headings",
-            yscrollcommand=scrollbar.set,
-            style="Custom.Treeview"
-        )
-        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-        scrollbar.config(command=self.tree.yview)
-
-        # Menyusun lebar kolom
-        column_widths = {
-            "Tanggal": 120,
-            "Penghuni": 150,
-            "Pesan Feedback": 350,
-            "Rating": 100
-        }
-
-        for col in columns:
-            self.tree.heading(col, text=col)
-            width = column_widths.get(col, 150)
-            # Hanya kolom "Penghuni" dan "Pesan Feedback" yang rata kiri
-            anchor = 'w' if col in ["Penghuni", "Pesan Feedback"] else 'center'
-            self.tree.column(col, width=width, anchor=anchor)
-
-        # Menyusun tag warna untuk baris
-        self.tree.tag_configure('evenrow', background='#FFFFFF')
-        self.tree.tag_configure('oddrow', background='#FAFAFA')
-
-        # Menambahkan data ke dalam tabel
-        for idx, row in enumerate(data):
-            tag = 'evenrow' if idx % 2 == 0 else 'oddrow'
-            # Menambahkan kolom aksi
-            row_with_action = list(row) + ["📝"]
-            item = self.tree.insert('', tk.END, values=row_with_action, tags=(tag,))
-            # Menambahkan event klik pada "📝" untuk melihat detail feedback
-            self.tree.bind('<ButtonRelease-1>', lambda event, item=item: self.view_feedback(event, item))
-    
-    def view_feedback(self, event, item):
-        """Menampilkan feedback lengkap dalam jendela baru"""
-        # Ambil seluruh nilai data dari baris yang dipilih
-        values = self.tree.item(item)["values"]
-        feedback = values[2]  # Kolom Pesan Feedback
-
-        # Membuka jendela pop-up untuk menampilkan feedback lengkap
-        view_window = tk.Toplevel(self)
-        view_window.title("View Feedback")
-        view_window.geometry("500x350")
-
-        feedback_text = f"""
-        Tanggal         : {values[0]}
-        Penghuni        : {values[1]}
-        Pesan Feedback  : {feedback}
-        Rating          : {values[3]}
+    def view_feedback(self, row):
+        """Menampilkan detail feedback"""
+        # Ambil data dari baris tersebut
+        tanggal = self.table.item(row, 0).text()
+        penghuni = self.table.item(row, 1).text()
+        pesan = self.table.item(row, 2).text()
+        rating = self.table.item(row, 3).text()
+        
+        details = f"""
+        <b>Detail Feedback</b><br><br>
+        <table>
+        <tr><td><b>Tanggal</b></td><td>: {tanggal}</td></tr>
+        <tr><td><b>Penghuni</b></td><td>: {penghuni}</td></tr>
+        <tr><td><b>Rating</b></td><td>: <span style='color:#E67300; font-size:16px;'>{rating}</span></td></tr>
+        </table>
+        <br>
+        <b>Pesan:</b><br>
+        <p style='background-color:#F5F5F5; padding:10px; border-radius:5px;'>{pesan}</p>
         """
+        
+        msg = QMessageBox(self)
+        msg.setWindowTitle("View Feedback")
+        msg.setTextFormat(Qt.TextFormat.RichText)
+        msg.setText(details)
+        msg.setIcon(QMessageBox.Icon.Information)
+        msg.exec()
 
-        label = tk.Label(
-            view_window,
-            text=feedback_text,
-            font=("Arial", 12),
-            wraplength=480,  # Membungkus teks jika terlalu panjang
-            justify="left"
-        )
-        label.pack(padx=10, pady=10)
-
-# Menjalankan aplikasi
+# --- Test Standalone ---
 if __name__ == "__main__":
-    root = tk.Tk()
-    root.geometry("1200x800")
-    root.title("Feedback Penghuni")
-
-    app = FeedbackPenghuni(root, None)
-    app.pack(fill=tk.BOTH, expand=True)
-
-    root.mainloop()
+    app = QApplication(sys.argv)
+    app.setFont(QFont("Segoe UI", 10))
+    
+    window = FeedbackPenghuni()
+    window.resize(1000, 600)
+    window.show()
+    
+    sys.exit(app.exec())

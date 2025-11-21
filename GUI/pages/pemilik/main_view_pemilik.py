@@ -1,79 +1,149 @@
 """
-Main application (pemilik view) controller for AnaKosware.
+Main application (Pemilik View) - Modern PyQt6 Version
+Fixes: Table readability, Layout glitches (Yellow Box), Removed Tkinter dependency.
 """
 
 import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
+from PyQt6.QtWidgets import (
+    QApplication, QMainWindow, QHBoxLayout, QVBoxLayout,
+    QWidget, QFrame, QMessageBox, QGraphicsDropShadowEffect
+)
+from PyQt6.QtGui import QColor, QFont
+from PyQt6.QtCore import Qt
 
-import tkinter as tk
-from tkinter import messagebox
-
-# Import components
-from components.pemilik.sidebar import Sidebar
-from components.pemilik.header import Header
-
-# Import pages
-from pages.pemilik.dashboard_penghuni import DashboardPenghuni
-from pages.pemilik.daftar_akun_penghuni import DaftarAkunPenghuni
-from pages.pemilik.riwayat_transaksi import RiwayatTransaksi
-from pages.pemilik.feedback_penghuni import FeedbackPenghuni
+# Import komponen & halaman
+from GUI.components.pemilik.sidebar import Sidebar
+from GUI.components.pemilik.header import Header
+from GUI.pages.pemilik.dashboard_penghuni import DashboardPenghuni
+from GUI.pages.pemilik.daftar_akun_penghuni import DaftarAkunPenghuni
+from GUI.pages.pemilik.riwayat_transaksi import RiwayatTransaksi
+from GUI.pages.pemilik.feedback_penghuni import FeedbackPenghuni
 
 
-class MainViewPemilik(tk.Tk):
-    """Main application window and controller"""
-    
+class MainViewPemilik(QMainWindow):
     def __init__(self):
         super().__init__()
+
+        # --- FIX 1: Hapus Tkinter sepenuhnya ---
+        # Mencampur Tkinter & PyQt menyebabkan glitch visual (kotak kuning/artifact).
         
-        # Window configuration
-        self.title("AnaKosware - Sistem Manajemen Kos")
-        self.geometry("1280x800")
-        self.configure(bg='white')
-        self.resizable(False, False)
-        
-        # Current user info
+        # === Window Setup ===
+        self.setWindowTitle("AnaKosware - Sistem Manajemen Kos")
+        self.setGeometry(100, 100, 1400, 900)
+        self.setMinimumSize(1200, 700)
+
+        # --- FIX 2: Styling Global untuk Memperbaiki Tabel Dashboard ---
+        # Kita set style global disini agar Table di Dashboard otomatis terkoreksi 
+        # warnanya tanpa mengubah kode dashboard satu per satu.
+        self.setStyleSheet("""
+            QMainWindow {
+                background-color: #F8FAFC; /* Background abu muda bersih */
+            }
+            QFrame#content_area {
+                background-color: #FFFFFF;
+                border-radius: 20px;
+            }
+            /* FIX TABLE READABILITY */
+            QTableWidget {
+                background-color: #FFFFFF;
+                alternate-background-color: #F9FAFB; /* Abu sangat muda (bukan biru tua) */
+                gridline-color: #E2E8F0;
+                selection-background-color: #E0F2FE; /* Biru muda saat dipilih */
+                selection-color: #0F172A;
+                color: #334155;
+                border: none;
+            }
+            QHeaderView::section {
+                background-color: #E2E8F0;
+                color: #1E293B;
+                padding: 8px;
+                border: none;
+                font-weight: bold;
+            }
+        """)
+
+        # === User Info ===
         self.current_user_name = "Ibu Kos"
         self.current_user_role = "Pemilik Kos"
+
+        # === Layout Utama ===
+        # Gunakan widget pusat untuk menampung layout horizontal
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
         
-        # Create main layout
-        self.create_layout()
-        
-        # Show initial page
-        self.show_dashboard()
-    
-    def create_layout(self):
-        """Create main application layout"""
-        # Main container
-        self.main_container = tk.Frame(self, bg='white')
-        self.main_container.pack(fill=tk.BOTH, expand=True)
-        
-        # Sidebar
+        # Layout: [Sidebar] [Content Area]
+        self.main_layout = QHBoxLayout(central_widget)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.setSpacing(0)
+
+        # === SIDEBAR (Kiri) ===
+        # Kita simpan referensi container sidebar agar mudah diganti
         self.sidebar = Sidebar(
-            self.main_container,
+            parent=self,
             on_menu_click=self.handle_navigation,
             active_menu='dashboard'
         )
-        self.sidebar.pack(side=tk.LEFT, fill=tk.Y, expand=False)
+        # Fixed width penting agar sidebar tidak 'gepeng'
+        self.sidebar.setFixedWidth(280) 
+        self.main_layout.addWidget(self.sidebar)
+
+        # === CONTENT AREA (Kanan) ===
+        # Container putih besar di sebelah kanan
+        self.content_area = QFrame()
+        self.content_area.setObjectName("content_area")
         
-        # Content area (right side)
-        self.content_area = tk.Frame(self.main_container, bg='white')
-        self.content_area.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
-        
-        # Header
+        # Shadow effect untuk content area (Estetika Modern)
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(40)
+        shadow.setXOffset(0)
+        shadow.setYOffset(0)
+        shadow.setColor(QColor(0, 0, 0, 20))
+        self.content_area.setGraphicsEffect(shadow)
+
+        # Layout vertikal di dalam content area (Header + Page)
+        self.content_layout = QVBoxLayout(self.content_area)
+        # Margin diset agar konten tidak menempel ke pinggir frame putih
+        self.content_layout.setContentsMargins(0, 0, 0, 0) 
+        self.content_layout.setSpacing(0)
+
+        # 1. Header
         self.header = Header(
-            self.content_area,
+            parent=self.content_area,
             user_name=self.current_user_name,
             user_role=self.current_user_role
         )
-        self.header.pack(fill=tk.X)
+        self.content_layout.addWidget(self.header)
+
+        # 2. Page Container (Tempat ganti-ganti halaman)
+        self.page_container = QFrame()
+        self.page_container.setLayout(QVBoxLayout())
+        # Padding di dalam halaman
+        self.page_container.layout().setContentsMargins(40, 30, 40, 40)
+        self.content_layout.addWidget(self.page_container, stretch=1)
+
+        # Tambahkan content area ke layout utama
+        # Stretch=1 memastikan area ini mengambil sisa ruang yang ada
+        self.main_layout.addWidget(self.content_area, stretch=1)
         
-        # Page container
-        self.page_container = tk.Frame(self.content_area, bg='white')
-        self.page_container.pack(fill=tk.BOTH, expand=True)
-    
+        # Set margin layout utama untuk memberikan efek "floating" pada content area (Opsional)
+        # Jika ingin sidebar menempel penuh ke kiri, set margin left 0.
+        # Disini kita beri margin sedikit agar terlihat seperti dashboard modern.
+        self.main_layout.setContentsMargins(0, 0, 20, 20) 
+
+        # === Tampilkan halaman pertama ===
+        self.show_dashboard()
+
+    # =================================================================
+    # LOGIC NAVIGATION
+    # =================================================================
+
     def handle_navigation(self, menu_id):
-        """Handle sidebar menu clicks"""
+        """Menangani perpindahan halaman"""
+        if menu_id == 'logout':
+            self.handle_logout()
+            return
+
+        # Pindah Halaman
         if menu_id == 'dashboard':
             self.show_dashboard()
         elif menu_id == 'register_tenant':
@@ -82,75 +152,85 @@ class MainViewPemilik(tk.Tk):
             self.show_transaction()
         elif menu_id == 'feedback':
             self.show_feedback()
-        elif menu_id == 'logout':
-            self.handle_logout()
-        
-        # Update sidebar active state
+
+        # Update tampilan sidebar (Active State)
         self.update_sidebar(menu_id)
-    
+
     def update_sidebar(self, active_menu):
-        """Update sidebar to show active menu"""
-        self.sidebar.destroy()
+        """
+        Teknik replace widget sidebar.
+        Menggunakan setUpdatesEnabled(False) untuk mencegah kedipan (flicker).
+        """
+        self.setUpdatesEnabled(False) # Matikan update visual sementara
+        
+        # Hapus sidebar lama
+        self.main_layout.removeWidget(self.sidebar)
+        self.sidebar.deleteLater()
+        
+        # Buat sidebar baru dengan state aktif yang baru
         self.sidebar = Sidebar(
-            self.main_container,
+            parent=self,
             on_menu_click=self.handle_navigation,
             active_menu=active_menu
         )
-        self.sidebar.pack(side=tk.LEFT, fill=tk.Y)
-    
+        self.sidebar.setFixedWidth(280)
+        
+        # Masukkan kembali ke posisi awal (index 0)
+        self.main_layout.insertWidget(0, self.sidebar)
+        
+        self.setUpdatesEnabled(True) # Nyalakan kembali
+
     def clear_page(self):
-        """Clear current page content"""
-        for widget in self.page_container.winfo_children():
-            widget.destroy()
-    
+        """Membersihkan halaman lama sebelum memuat halaman baru"""
+        layout = self.page_container.layout()
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+
+    # --- Page Loaders ---
+
     def show_dashboard(self):
-        """Show dashboard page"""
         self.clear_page()
-        self.title("AnaKosware - Dashboard")
-        
-        # Import dan tampilkan DashboardPenghuni
-        from pages.pemilik.dashboard_penghuni import DashboardPenghuni
+        self.setWindowTitle("AnaKosware - Dashboard")
         page = DashboardPenghuni(self.page_container, self)
-        page.pack(fill=tk.BOTH, expand=True)
-    
+        self.page_container.layout().addWidget(page)
+
     def show_register_tenant(self):
-        """Show register tenant page"""
         self.clear_page()
-        self.title("AnaKosware - Daftar Akun Penghuni")
-        
+        self.setWindowTitle("AnaKosware - Daftar Akun Penghuni")
         page = DaftarAkunPenghuni(self.page_container, self)
-        page.pack(fill=tk.BOTH, expand=True)
-    
+        self.page_container.layout().addWidget(page)
+
     def show_transaction(self):
-        """Show transaction history page"""
         self.clear_page()
-        self.title("AnaKosware - Riwayat Transaksi")
-        
+        self.setWindowTitle("AnaKosware - Riwayat Transaksi")
         page = RiwayatTransaksi(self.page_container, self)
-        page.pack(fill=tk.BOTH, expand=True)
-    
+        self.page_container.layout().addWidget(page)
+
     def show_feedback(self):
-        """Show feedback page"""
         self.clear_page()
-        self.title("AnaKosware - Feedback Record")
-        
+        self.setWindowTitle("AnaKosware - Feedback Penghuni")
         page = FeedbackPenghuni(self.page_container, self)
-        page.pack(fill=tk.BOTH, expand=True)
+        self.page_container.layout().addWidget(page)
 
-
-    
     def handle_logout(self):
-        """Handle logout"""
-        response = messagebox.askyesno(
-            "Logout",
-            "Apakah Anda yakin ingin logout?"
+        reply = QMessageBox.question(
+            self, "Logout", "Apakah Anda yakin ingin logout?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
         )
-        
-        if response:
+        if reply == QMessageBox.StandardButton.Yes:
             print("Logging out...")
-            self.destroy()
-
+            self.close()
 
 if __name__ == "__main__":
-    app = MainViewPemilik()
-    app.mainloop()
+    app = QApplication(sys.argv)
+    app.setStyle("Fusion")
+
+    # Font Global
+    app.setFont(QFont("Segoe UI", 10))
+
+    window = MainViewPemilik()
+    window.show()
+    sys.exit(app.exec())
