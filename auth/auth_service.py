@@ -50,12 +50,12 @@ class AuthService:
                 "message": "Gagal menyimpan data ke database.",
             }
 
-    def login(self, jenis_akun: str, username: str, password: str) -> dict:
+    def login(self, jenisAkun: str, username: str, password: str) -> dict:
         """
         Memvalidasi login user.
         SELECT * FROM user
         WHERE username = ? AND password = ?
-          AND jenis_akun = ? AND status_akun = 1;
+          AND jenisAkun = ? AND status_akun = 1;
         """
 
         if not username or not password:
@@ -65,15 +65,15 @@ class AuthService:
             }
 
         query = """
-            SELECT user_id, username, nama, jenis_akun, status_akun
+            SELECT user_id, username, nama, jenisAkun, status_akun
             FROM user
             WHERE username   = %s
               AND password   = %s
-              AND jenis_akun = %s
+              AND jenisAkun = %s
               AND status_akun = 1
             LIMIT 1
         """
-        params = (username, password, jenis_akun)
+        params = (username, password, jenisAkun)
 
         rows = self.db.execute_query(query, params)
 
@@ -91,7 +91,7 @@ class AuthService:
                 "user_id": user["user_id"],
                 "username": user["username"],
                 "nama": user["nama"],
-                "jenis_akun": user["jenis_akun"],
+                "jenisAkun": user["jenisAkun"],
             },
         }
 
