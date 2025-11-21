@@ -17,8 +17,8 @@ class AuthService:
     def register_penghuni(self, username: str, nama: str, password: str) -> dict:
         """
         Mendaftarkan akun penghuni baru.
-        Asumsi kolom tabel user: user_id, username, nama, password, jenis_akun, status_akun.
-        jenis_akun untuk penghuni: 'PENGHUNI' (ganti kalau di SQL kalian beda).
+        Asumsi kolom tabel user: user_id, username, nama, password, jenisAkun, status_akun.
+        jenisAkun untuk penghuni: 'PENGHUNI' (ganti kalau di SQL kalian beda).
         status_akun: 1 = aktif, 0 = non-aktif.
         """
 
@@ -35,7 +35,7 @@ class AuthService:
             }
 
         query = """
-            INSERT INTO user (username, nama, password, jenis_akun, status_akun)
+            INSERT INTO user (username, nama, password, jenisAkun, status_akun)
             VALUES (%s, %s, %s, %s, %s)
         """
         params = (username, nama, password, "PENGHUNI", 1)
