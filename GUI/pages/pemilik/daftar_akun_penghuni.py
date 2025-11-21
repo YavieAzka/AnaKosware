@@ -1,297 +1,266 @@
-"""
-Daftar Akun Penghuni page for AnaKosware application.
-"""
-import tkinter as tk
-from tkinter import messagebox
-from tkcalendar import DateEntry
 import sys
-import os
+from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel, 
+                             QLineEdit, QPushButton, QMessageBox, QFrame, 
+                             QHBoxLayout, QDateEdit, QScrollArea)
+from PyQt6.QtCore import Qt, QDate
+from PyQt6.QtGui import QFont, QIntValidator
 
-from components.custom_widgets import PlaceholderEntry, StyledButton
+from .register_logic import AuthService
+# Import Backend Class (Pastikan kode backend di atas sudah ada)
+# from backend import AuthService 
 
-class DaftarAkunPenghuni(tk.Frame):
-    """Page untuk daftarkan akun baru penghuni"""
-    
-    def __init__(self, parent, controller):
-        super().__init__(parent, bg='white')
-        self.controller = controller
-        
-        self.create_content()
-    
-    def create_content(self):
-        """Create page content"""
-        # Page title
-        title = tk.Label(
-            self,
-            text="Daftar Akun Penghuni Baru",
-            font=('Arial', 18, 'bold'),
-            bg='white',
-            fg='#2D3142'
-        )
-        title.pack(pady=(30, 20), padx=40, anchor='w')
-        
-        # Form container with dashed border
-        self.create_form_container()
-    
-    def create_form_container(self):
-        """Create form container with dashed border"""
-        # Outer frame for dashed border effect
-        border_frame = tk.Frame(self, bg='white')
-        border_frame.pack(fill=tk.BOTH, expand=True, padx=40, pady=(0, 40))
-        
-        # Canvas for dashed border
-        canvas = tk.Canvas(border_frame, bg='white', highlightthickness=0)
-        canvas.pack(fill=tk.BOTH, expand=True)
-        
-        # Inner form frame
-        form_frame = tk.Frame(canvas, bg='white')
-        form_frame.place(relx=0.5, rely=0.5, anchor='center', relwidth=0.96, relheight=0.94)
-        
-        # Draw dashed rectangle
-        canvas.update()
-        width = canvas.winfo_width()
-        height = canvas.winfo_height()
-        self.draw_dashed_rectangle(canvas, 10, 10, width-10, height-10, '#D8BFD8', 3, 10)
-        
-        # Create form fields
-        self.create_form_fields(form_frame)
-    
-    def draw_dashed_rectangle(self, canvas, x1, y1, x2, y2, color, width, dash_length):
-        """Draw a dashed rectangle on canvas"""
-        # Top
-        for x in range(x1, x2, dash_length * 2):
-            canvas.create_line(x, y1, min(x + dash_length, x2), y1, fill=color, width=width)
-        # Bottom
-        for x in range(x1, x2, dash_length * 2):
-            canvas.create_line(x, y2, min(x + dash_length, x2), y2, fill=color, width=width)
-        # Left
-        for y in range(y1, y2, dash_length * 2):
-            canvas.create_line(x1, y, x1, min(y + dash_length, y2), fill=color, width=width)
-        # Right
-        for y in range(y1, y2, dash_length * 2):
-            canvas.create_line(x2, y, x2, min(y + dash_length, y2), fill=color, width=width)
-    
-    def create_form_fields(self, parent):
-        """Create all form input fields"""
-        # Nama Penghuni
-        self.create_label(parent, "Nama Penghuni")
-        self.nama_entry = PlaceholderEntry(
-            parent,
-            placeholder="Masukkan Nama Penghuni",
-            font=('Arial', 11),
-            bg='#F5F5F5',
-            relief='solid',
-            borderwidth=1
-        )
-        self.nama_entry.pack(fill=tk.X, padx=40, pady=(0, 20))
-        
-        # Tanggal Masuk & Nomor Telepon (same row)
-        row_frame = tk.Frame(parent, bg='white')
-        row_frame.pack(fill=tk.X, padx=40, pady=(0, 20))
-        
-        # Tanggal Masuk (left side)
-        left_frame = tk.Frame(row_frame, bg='white')
-        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
-        
-        self.create_label(left_frame, "Tanggal Masuk")
-        date_container = tk.Frame(left_frame, bg='white')
-        date_container.pack(fill=tk.X, padx=40) 
+class RegisterPenghuniWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.auth_service = AuthService() # Inisialisasi backend
+        self.init_ui()
 
-        self.date_entry = DateEntry(
-            left_frame,
-            width=30,
-            background='#FF9966',
-            foreground='white',
-            borderwidth=1,
-            date_pattern='dd/mm/yyyy',
-            font=('Arial', 11)
-        )
-        self.date_entry.pack(fill=tk.X, ipady=6)
+    def init_ui(self):
+        self.setWindowTitle("AnaKosware - Daftar Penghuni")
+        self.setGeometry(100, 100, 600, 750) # Ukuran window portrait
+        self.setStyleSheet("background-color: #FFFFFF;")
+
+        # --- Main Layout dengan Scroll Area (agar responsif di layar kecil) ---
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("border: none;")
         
-        # Nomor Telepon (right side)
-        right_frame = tk.Frame(row_frame, bg='white')
-        right_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(10, 0))
+        content_widget = QWidget()
+        content_layout = QVBoxLayout(content_widget)
+        content_layout.setContentsMargins(40, 40, 40, 40)
+        content_layout.setSpacing(20)
+
+        # 1. Header Title
+        lbl_title = QLabel("Daftar Akun Penghuni Baru")
+        lbl_title.setStyleSheet("font-size: 24px; font-weight: bold; color: #2D3142; margin-bottom: 10px;")
+        content_layout.addWidget(lbl_title)
+
+        # 2. Form Container (Dashed Border Frame)
+        form_frame = QFrame()
+        form_frame.setStyleSheet("""
+            QFrame {
+                background-color: #FFFFFF;
+                border: 2px dashed #D8BFD8; /* Border putus-putus ungu muda sesuai request */
+                border-radius: 10px;
+            }
+        """)
+        form_layout = QVBoxLayout(form_frame)
+        form_layout.setContentsMargins(30, 30, 30, 30)
+        form_layout.setSpacing(15)
+
+        # --- Form Fields Helper ---
+        # Kita buat style global untuk input agar rapi
+        self.input_style = """
+            QLineEdit, QDateEdit {
+                background-color: #F5F5F5;
+                border: 1px solid #E0E0E0;
+                border-radius: 8px;
+                padding: 10px;
+                font-size: 14px;
+                color: #333;
+            }
+            QDateEdit::drop-down {
+                border: 0px;
+            }
+        """
+
+        # -- Field: Nama Penghuni --
+        form_layout.addWidget(self.create_label("Nama Penghuni"))
+        self.txt_nama = QLineEdit()
+        self.txt_nama.setPlaceholderText("Masukkan Nama Lengkap")
+        self.txt_nama.setStyleSheet(self.input_style)
+        form_layout.addWidget(self.txt_nama)
+
+        # -- Field Row: Tanggal Masuk & Telepon --
+        row_layout = QHBoxLayout()
         
-        self.create_label(right_frame, "Nomor Telepon Penghuni")
-        phone_frame = tk.Frame(right_frame, bg='white')
-        phone_frame.pack(fill=tk.X)
+        # Tanggal Masuk
+        date_container = QVBoxLayout()
+        date_container.addWidget(self.create_label("Tanggal Masuk"))
+        self.date_masuk = QDateEdit()
+        self.date_masuk.setCalendarPopup(True) # Modern calendar popup
+        self.date_masuk.setDate(QDate.currentDate())
+        self.date_masuk.setDisplayFormat("dd/MM/yyyy")
+        self.date_masuk.setStyleSheet(self.input_style + "color: #333;") 
+        date_container.addWidget(self.date_masuk)
+        row_layout.addLayout(date_container, 1) # Stretch factor 1
+
+        row_layout.addSpacing(20)
+
+        # Telepon (+62 Prefix)
+        phone_container = QVBoxLayout()
+        phone_container.addWidget(self.create_label("Nomor Telepon"))
         
-        # +62 prefix
-        prefix = tk.Label(
-            phone_frame,
-            text="+62",
-            font=('Arial', 11),
-            bg='#F5F5F5',
-            fg='#666666',
-            relief='solid',
-            borderwidth=1
-        )
-        prefix.pack(side=tk.LEFT, ipady=6, ipadx=10)
+        phone_input_layout = QHBoxLayout()
+        lbl_prefix = QLabel("+62")
+        lbl_prefix.setStyleSheet("background-color: #F5F5F5; border: 1px solid #E0E0E0; border-radius: 8px; padding: 10px; font-weight: bold; color: #666;")
+        phone_input_layout.addWidget(lbl_prefix)
         
-        self.phone_entry = PlaceholderEntry(
-            phone_frame,
-            placeholder="Masukkan no telepon ( ex : 8123456789)",
-            font=('Arial', 11),
-            bg='#F5F5F5',
-            relief='solid',
-            borderwidth=1
-        )
-        self.phone_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, ipady=6, padx=(5,0))
+        self.txt_telepon = QLineEdit()
+        self.txt_telepon.setPlaceholderText("81234567890")
+        self.txt_telepon.setValidator(QIntValidator()) # Hanya angka
+        self.txt_telepon.setStyleSheet(self.input_style)
+        phone_input_layout.addWidget(self.txt_telepon)
         
-        # Nomor Kamar Penghuni
-        self.create_label(parent, "Nomor Kamar Penghuni")
-        self.kamar_entry = PlaceholderEntry(
-            parent,
-            placeholder="Masukkan Nomor Kamar  Penghuni",
-            font=('Arial', 11),
-            bg='#F5F5F5',
-            relief='solid',
-            borderwidth=1
-        )
-        self.kamar_entry.pack(fill=tk.X, padx=40, pady=(0, 20))
+        phone_container.addLayout(phone_input_layout)
+        row_layout.addLayout(phone_container, 1)
+
+        form_layout.addLayout(row_layout)
+
+        # -- Field: Nomor Kamar --
+        form_layout.addWidget(self.create_label("Nomor Kamar"))
+        self.txt_kamar = QLineEdit()
+        self.txt_kamar.setPlaceholderText("Contoh: A-101")
+        self.txt_kamar.setStyleSheet(self.input_style)
+        form_layout.addWidget(self.txt_kamar)
+
+        # -- Field: Harga Kamar --
+        form_layout.addWidget(self.create_label("Harga Kamar (Per Bulan)"))
+        self.txt_harga = QLineEdit()
+        self.txt_harga.setPlaceholderText("Contoh: 1000000")
+        self.txt_harga.setValidator(QIntValidator())
+        self.txt_harga.setStyleSheet(self.input_style)
+        form_layout.addWidget(self.txt_harga)
+
+        # -- Field: Username --
+        form_layout.addWidget(self.create_label("Username Akun"))
+        self.txt_username = QLineEdit()
+        self.txt_username.setPlaceholderText("Buat username unik")
+        self.txt_username.setStyleSheet(self.input_style)
+        form_layout.addWidget(self.txt_username)
+
+        # -- Field: Password --
+        form_layout.addWidget(self.create_label("Password"))
+        self.txt_password = QLineEdit()
+        self.txt_password.setPlaceholderText("Minimal 6 karakter")
+        self.txt_password.setEchoMode(QLineEdit.EchoMode.Password)
+        self.txt_password.setStyleSheet(self.input_style)
+        form_layout.addWidget(self.txt_password)
+
+        # -- Submit Button --
+        btn_submit = QPushButton("Daftarkan Akun Penghuni")
+        btn_submit.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_submit.clicked.connect(self.submit_form)
+        btn_submit.setStyleSheet("""
+            QPushButton {
+                background-color: #EE8B60;
+                color: white;
+                font-weight: bold;
+                border-radius: 10px;
+                padding: 12px;
+                font-size: 14px;
+                margin-top: 20px;
+            }
+            QPushButton:hover {
+                background-color: #D97A50;
+            }
+            QPushButton:pressed {
+                background-color: #C06940;
+            }
+        """)
+        form_layout.addWidget(btn_submit)
+
+        # Masukkan frame form ke layout utama
+        content_layout.addWidget(form_frame)
+        content_layout.addStretch()
+
+        # Set Scroll Area widget
+        scroll.setWidget(content_widget)
+        main_layout.addWidget(scroll)
+
+    def create_label(self, text):
+        label = QLabel(text)
+        label.setStyleSheet("font-weight: bold; color: #2D3142; font-size: 13px; border: none;")
+        return label
+
+    def show_popup(self, title, message, is_error=False):
+        """Custom Popup Style konsisten dengan Login Page"""
+        msg = QMessageBox(self)
+        msg.setWindowTitle(title)
+        msg.setText(message)
         
-        # Harga Kamar Penghuni
-        self.create_label(parent, "Harga Kamar Penghuni")
-        self.harga_entry = PlaceholderEntry(
-            parent,
-            placeholder="Masukkan Harga Kamar perbulan penghuni (Rp.)",
-            font=('Arial', 11),
-            bg='#F5F5F5',
-            relief='solid',
-            borderwidth=1
-        )
-        self.harga_entry.pack(fill=tk.X, padx=40, pady=(0, 20))
-        
-        # Username Akun Penghuni
-        self.create_label(parent, "Username Akun Penghuni")
-        self.username_entry = PlaceholderEntry(
-            parent,
-            placeholder="Masukkan Username Penghuni",
-            font=('Arial', 11),
-            bg='#F5F5F5',
-            relief='solid',
-            borderwidth=1
-        )
-        self.username_entry.pack(fill=tk.X, padx=40, pady=(0, 20))
-        
-        # Password Penghuni
-        self.create_label(parent, "Password Penghuni")
-        self.password_entry = PlaceholderEntry(
-            parent,
-            placeholder="Masukkan Password Penghuni",
-            font=('Arial', 11),
-            bg='#F5F5F5',
-            relief='solid',
-            borderwidth=1,
-            show='•'
-        )
-        self.password_entry.pack(fill=tk.X, padx=40, pady=(0, 30))
-        
-        # Submit button
-        button_frame = tk.Frame(parent, bg='white')
-        button_frame.pack(pady=(10, 20))
-        
-        submit_btn = StyledButton(
-            button_frame,
-            text="Daftarkan Akun Penghuni",
-            font=('Arial', 12, 'bold'),
-            bg='#FF9966',
-            fg='white',
-            hover_bg='#FF8C4D',
-            padx=50,
-            pady=12,
-            command=self.submit_form
-        )
-        submit_btn.pack()
-    
-    def create_label(self, parent, text):
-        """Create a field label"""
-        label = tk.Label(
-            parent,
-            text=text,
-            font=('Arial', 11, 'bold'),
-            bg='white',
-            fg='#2D3142'
-        )
-        label.pack(anchor='w', padx=40, pady=(0, 8))
-    
+        if is_error:
+            msg.setIcon(QMessageBox.Icon.Warning)
+        else:
+            msg.setIcon(QMessageBox.Icon.Information)
+            
+        msg.setStyleSheet("""
+            QMessageBox { background-color: #FFFFFF; }
+            QLabel { color: #000000; font-size: 13px; }
+            QPushButton {
+                background-color: #EE8B60; color: white;
+                border-radius: 5px; padding: 6px 20px;
+                font-weight: bold; min-width: 60px;
+            }
+            QPushButton:hover { background-color: #D97A50; }
+        """)
+        msg.exec()
+
     def submit_form(self):
-        """Handle form submission"""
-        # Get values
+        # 1. Ambil Data
         data = {
-            'nama': self.nama_entry.get_value(),
-            'tanggal_masuk': self.date_entry.get_date().strftime('%d/%m/%Y'),
-            'telepon': self.phone_entry.get_value(),
-            'nomor_kamar': self.kamar_entry.get_value(),
-            'harga': self.harga_entry.get_value(),
-            'username': self.username_entry.get_value(),
-            'password': self.password_entry.get_value()
+            'nama': self.txt_nama.text().strip(),
+            'tanggal_masuk': self.date_masuk.date().toString("yyyy-MM-dd"), # Format SQL
+            'telepon': "0" + self.txt_telepon.text().strip(), # Tambah 0 di depan +62 logic bisa disesuaikan
+            'nomor_kamar': self.txt_kamar.text().strip(),
+            'harga': self.txt_harga.text().strip(),
+            'username': self.txt_username.text().strip(),
+            'password': self.txt_password.text().strip()
         }
+
+        # 2. Validasi Form (Porting dari Tkinter logic)
+        for key, val in data.items():
+            if not val:
+                self.show_popup("Error Validasi", f"Field {key.replace('_', ' ').title()} harus diisi!", True)
+                return
+
+        if not self.txt_telepon.text().isdigit():
+             self.show_popup("Error Validasi", "Nomor telepon harus berupa angka!", True)
+             return
         
-        # Validate
-        if not self.validate_form(data):
-            return
-        
-        # Save (implement database save here)
-        print("Form Data:", data)
-        
-        # Show success message
-        messagebox.showinfo(
-            "Sukses",
-            f"Akun penghuni atas nama {data['nama']} berhasil didaftarkan!"
-        )
-        
-        # Clear form
-        self.clear_form()
-    
-    def validate_form(self, data):
-        """Validate form data"""
-        # Check empty fields
-        for field, value in data.items():
-            if not value or value.strip() == '':
-                messagebox.showerror(
-                    "Error",
-                    f"Field {field.replace('_', ' ').title()} harus diisi!"
-                )
-                return False
-        
-        # Validate phone
-        if not data['telepon'].isdigit():
-            messagebox.showerror("Error", "Nomor telepon harus berupa angka!")
-            return False
-        
-        if len(data['telepon']) < 9:
-            messagebox.showerror("Error", "Nomor telepon minimal 9 digit!")
-            return False
-        
-        # Validate username
+        # Cek panjang telepon (di UI user input misal 812..., ditambah 0 jadi min 10 digit total)
+        if len(self.txt_telepon.text()) < 9:
+             self.show_popup("Error Validasi", "Nomor telepon minimal 9 digit!", True)
+             return
+
         if ' ' in data['username']:
-            messagebox.showerror("Error", "Username tidak boleh mengandung spasi!")
-            return False
-        
-        # Validate password
+             self.show_popup("Error Validasi", "Username tidak boleh mengandung spasi!", True)
+             return
+
         if len(data['password']) < 6:
-            messagebox.showerror("Error", "Password minimal 6 karakter!")
-            return False
+             self.show_popup("Error Validasi", "Password minimal 6 karakter!", True)
+             return
+
+        # 3. Kirim ke Backend
+        # Sesuaikan no telepon untuk database (misal format 08...)
+        # Logic: User input 8123 -> kita simpan 08123
         
-        return True
-    
+        result = self.auth_service.register_penghuni_complete(data)
+
+        if result["status"] == "success":
+            self.show_popup("Sukses", result["message"])
+            self.clear_form()
+        else:
+            self.show_popup("Gagal", result["message"], True)
+
     def clear_form(self):
-        """Clear all form fields"""
-        self.nama_entry.delete(0, tk.END)
-        self.nama_entry._add_placeholder()
-        
-        self.phone_entry.delete(0, tk.END)
-        self.phone_entry._add_placeholder()
-        
-        self.kamar_entry.delete(0, tk.END)
-        self.kamar_entry._add_placeholder()
-        
-        self.harga_entry.delete(0, tk.END)
-        self.harga_entry._add_placeholder()
-        
-        self.username_entry.delete(0, tk.END)
-        self.username_entry._add_placeholder()
-        
-        self.password_entry.delete(0, tk.END)
-        self.password_entry._add_placeholder()
+        self.txt_nama.clear()
+        self.txt_telepon.clear()
+        self.txt_kamar.clear()
+        self.txt_harga.clear()
+        self.txt_username.clear()
+        self.txt_password.clear()
+        self.date_masuk.setDate(QDate.currentDate())
+
+# --- Main Execution untuk Testing ---
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    font = QFont("Segoe UI", 10)
+    app.setFont(font)
+    
+    window = RegisterPenghuniWindow()
+    window.show()
+    sys.exit(app.exec())
