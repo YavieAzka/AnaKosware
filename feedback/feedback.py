@@ -50,14 +50,14 @@ class FeedbackService:
         Mengambil semua data feedback digabung dengan data user (nama penghuni).
         """
         try:
-            # Join tabel feedback dengan tabel user untuk mendapatkan nama pengirim
+            # PERBAIKAN: Saya menghapus 'u.nomor_kamar' dari query di bawah ini
+            # karena kolom tersebut tidak ada di tabel user Anda.
             query = """
                 SELECT 
                     f.feedback_id, 
                     f.tanggal_feedback, 
                     f.isi, 
-                    u.nama AS nama_penghuni,
-                    u.nomor_kamar -- Opsional: jika ada kolom nomor_kamar di tabel user/penghuni
+                    u.nama AS nama_penghuni
                 FROM feedback f
                 JOIN user u ON f.user_id = u.user_id
                 ORDER BY f.tanggal_feedback DESC
@@ -66,18 +66,22 @@ class FeedbackService:
             feedbacks = self.db.execute_query(query)
             
             if feedbacks:
-                # Formatting data tanggal
                 formatted_data = []
                 for item in feedbacks:
+                    # Formatting data tanggal agar aman (handle date object atau string)
                     tgl = item['tanggal_feedback']
-                    if isinstance(tgl, str):
+                    str_tgl = str(tgl) # Fallback default
+                    
+                    if hasattr(tgl, 'strftime'):
+                        str_tgl = tgl.strftime("%d-%m-%Y")
+                    elif isinstance(tgl, str):
+                        # Coba parsing jika string formatnya YYYY-MM-DD
                         try:
-                            tgl_obj = datetime.strptime(tgl, "%Y-%m-%d %H:%M:%S.%f")
-                            str_tgl = tgl_obj.strftime("%d-%m-%Y %H:%M")
+                            # Sesuaikan format ini dengan output database Anda jika perlu
+                            tgl_obj = datetime.strptime(str(tgl), "%Y-%m-%d") 
+                            str_tgl = tgl_obj.strftime("%d-%m-%Y")
                         except:
-                            str_tgl = tgl
-                    else:
-                        str_tgl = tgl.strftime("%d-%m-%Y %H:%M")
+                            pass # Gunakan string aslinya jika parsing gagal
 
                     formatted_data.append({
                         "id": item['feedback_id'],
@@ -98,6 +102,8 @@ class FeedbackService:
                 }
 
         except Exception as e:
+            # Print error ke terminal agar mudah debugging
+            print(f"DEBUG ERROR FEEDBACK: {str(e)}")
             return {"status": "error", "message": f"Gagal memuat data: {str(e)}"}
 
     def get_my_feedback_history(self, user_id):

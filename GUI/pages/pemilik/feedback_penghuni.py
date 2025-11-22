@@ -1,6 +1,7 @@
 """
 Feedback Penghuni page for AnaKosware application - PyQt6 Version
 Style: Modern, Minimalist, Consistent with Dashboard.
+Integration: Connected to FeedbackService (Backend).
 """
 import sys
 from PyQt6.QtWidgets import (
@@ -12,6 +13,14 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QFont, QColor, QCursor
 
+# --- IMPORT BACKEND ---
+try:
+    # Asumsi file backend disimpan di database/feedback.py
+    from feedback.feedback import FeedbackService
+except ImportError:
+    print("Warning: Backend FeedbackService not found. Using Dummy Data.")
+    FeedbackService = None
+
 class FeedbackPenghuni(QWidget):
     """Halaman untuk menampilkan feedback penghuni"""
     
@@ -19,6 +28,12 @@ class FeedbackPenghuni(QWidget):
         super().__init__(parent)
         self.controller = controller
         
+        # --- INISIALISASI SERVICE ---
+        if FeedbackService:
+            self.feedback_service = FeedbackService()
+        else:
+            self.feedback_service = None
+
         # Setup Basic Properties
         self.setObjectName("FeedbackPage")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -102,16 +117,11 @@ class FeedbackPenghuni(QWidget):
         self.create_search_filter()
         
         # 3. Table Section
-        # Data dummy
-        self.data = [
-            ["04/17/23", "A01 - Leslie Alexander", "Saya merasa sangat puas dengan pelayanan Kos Melati, pelayanan sangat lengkap dan rumahnya nyaman serta bersih.", "★★★★★"],
-            ["04/17/23", "A01 - Benjamin Franklin", "Pelayanan Kos ini cukup baik, namun ada beberapa area yang bisa diperbaiki, terutama kebersihan di sekitar.", "★★★★"],
-            ["04/17/23", "A02 - John Doe", "Kamar sangat nyaman dan fasilitas lengkap, saya merasa sangat nyaman tinggal di sini selama beberapa minggu.", "★★★★★"],
-            ["04/17/23", "A03 - Alice Johnson", "Kos ini cukup nyaman, tetapi harga sedikit lebih mahal dibandingkan dengan kos lainnya di daerah ini.", "★★★"],
-        ]
-        
         columns = ["Tanggal", "Penghuni", "Pesan Feedback", "Rating", "Action"]
-        self.create_table(columns, self.data)
+        self.create_table(columns)
+        
+        # 4. LOAD DATA DARI BACKEND
+        self.load_data()
         
         # Spacer di bawah agar rapi
         self.main_layout.addStretch()
@@ -141,8 +151,8 @@ class FeedbackPenghuni(QWidget):
         
         self.main_layout.addWidget(container)
 
-    def create_table(self, columns, data):
-        """Membuat tabel feedback"""
+    def create_table(self, columns):
+        """Membuat struktur tabel feedback"""
         self.table = QTableWidget()
         self.table.setColumnCount(len(columns))
         self.table.setHorizontalHeaderLabels(columns)
@@ -163,14 +173,11 @@ class FeedbackPenghuni(QWidget):
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch) # Kolom Pesan stretch
         
         # Set Initial Column Widths
-        self.table.setColumnWidth(0, 120) # Tanggal
+        self.table.setColumnWidth(0, 150) # Tanggal
         self.table.setColumnWidth(1, 200) # Penghuni
-        self.table.setColumnWidth(3, 100) # Rating
+        self.table.setColumnWidth(3, 80)  # Rating
         self.table.setColumnWidth(4, 80)  # Action
 
-        # Populate Data
-        self.populate_table(data)
-        
         # Connect Signals
         self.table.cellClicked.connect(self.on_cell_click)
         
@@ -184,28 +191,72 @@ class FeedbackPenghuni(QWidget):
 
         self.main_layout.addWidget(self.table)
 
+    def load_data(self):
+        """Mengambil data dari database menggunakan FeedbackService"""
+        if not self.feedback_service:
+            # Fallback jika backend belum siap (Dummy Data)
+            self.data = [
+                ["04/17/23", "Dummy User", "Backend tidak terhubung.", "★", ""],
+            ]
+            self.populate_table(self.data)
+            return
+
+        try:
+            response = self.feedback_service.get_all_feedbacks()
+            
+            if response["status"] == "success":
+                db_data = response["data"]
+                self.data = []
+                
+                # Transform data dari Dict (Backend) ke List (Frontend)
+                for item in db_data:
+                    # Format baris: [Tanggal, Penghuni, Isi, Rating, ActionPlaceholder]
+                    row = [
+                        item['tanggal'],   # Tanggal sudah diformat di backend
+                        item['penghuni'],  # Nama penghuni
+                        item['isi'],       # Isi Feedback
+                        "-",               # Rating (Default '-' karena tidak ada di DB)
+                        ""                 # Placeholder action
+                    ]
+                    self.data.append(row)
+                
+                self.populate_table(self.data)
+            else:
+                QMessageBox.warning(self, "Info", response["message"])
+                
+        except Exception as e:
+            print(f"Error loading data: {e}")
+            QMessageBox.critical(self, "Error", "Gagal memuat data feedback.")
+
     def populate_table(self, data):
         """Mengisi data ke tabel"""
+        self.table.setRowCount(0) # Reset tabel
         self.table.setRowCount(len(data))
+        
         for i, row_data in enumerate(data):
             # Tanggal
-            item_date = QTableWidgetItem(row_data[0])
+            item_date = QTableWidgetItem(str(row_data[0]))
             item_date.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.table.setItem(i, 0, item_date)
             
             # Penghuni
-            self.table.setItem(i, 1, QTableWidgetItem(row_data[1]))
+            self.table.setItem(i, 1, QTableWidgetItem(str(row_data[1])))
             
-            # Pesan (Truncate visual handled by Qt usually, but let's keep it clean)
-            self.table.setItem(i, 2, QTableWidgetItem(row_data[2]))
+            # Pesan
+            self.table.setItem(i, 2, QTableWidgetItem(str(row_data[2])))
             
             # Rating
-            item_rating = QTableWidgetItem(row_data[3])
-            item_rating.setForeground(QColor("#FFB400")) # Warna Emas/Oranye untuk bintang
+            # Karena DB tidak punya rating, kita tampilkan '-' atau bintang jika dummy
+            rating_text = str(row_data[3])
+            item_rating = QTableWidgetItem(rating_text)
             item_rating.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            font = QFont()
-            font.setPointSize(14) # Bintang lebih besar
-            item_rating.setFont(font)
+            
+            if "★" in rating_text:
+                item_rating.setForeground(QColor("#FFB400")) # Warna Emas
+                font = QFont()
+                font.setPointSize(14)
+                item_rating.setFont(font)
+            
             self.table.setItem(i, 3, item_rating)
             
             # Action Icon
@@ -216,7 +267,7 @@ class FeedbackPenghuni(QWidget):
             item_action.setFont(action_font)
             self.table.setItem(i, 4, item_action)
             
-            # Set row height agar pesan panjang muat (opsional, atau biarkan single line)
+            # Set row height
             self.table.setRowHeight(i, 50)
 
     def on_search(self):
@@ -236,7 +287,9 @@ class FeedbackPenghuni(QWidget):
             self.table.setRowHidden(row, not match)
 
     def show_filter(self):
-        QMessageBox.information(self, "Filter", "Opsi filter akan datang segera!")
+        # Refresh data saat tombol filter diklik (sebagai pengganti filter kompleks sementara)
+        self.load_data() 
+        QMessageBox.information(self, "Reload", "Data feedback diperbarui dari database.")
 
     def on_cell_click(self, row, col):
         """Handle klik pada tabel (khususnya kolom Action)"""
@@ -247,29 +300,30 @@ class FeedbackPenghuni(QWidget):
     def view_feedback(self, row):
         """Menampilkan detail feedback"""
         # Ambil data dari baris tersebut
-        tanggal = self.table.item(row, 0).text()
-        penghuni = self.table.item(row, 1).text()
-        pesan = self.table.item(row, 2).text()
-        rating = self.table.item(row, 3).text()
-        
-        details = f"""
-        <b>Detail Feedback</b><br><br>
-        <table>
-        <tr><td><b>Tanggal</b></td><td>: {tanggal}</td></tr>
-        <tr><td><b>Penghuni</b></td><td>: {penghuni}</td></tr>
-        <tr><td><b>Rating</b></td><td>: <span style='color:#E67300; font-size:16px;'>{rating}</span></td></tr>
-        </table>
-        <br>
-        <b>Pesan:</b><br>
-        <p style='background-color:#F5F5F5; padding:10px; border-radius:5px;'>{pesan}</p>
-        """
-        
-        msg = QMessageBox(self)
-        msg.setWindowTitle("View Feedback")
-        msg.setTextFormat(Qt.TextFormat.RichText)
-        msg.setText(details)
-        msg.setIcon(QMessageBox.Icon.Information)
-        msg.exec()
+        try:
+            tanggal = self.table.item(row, 0).text()
+            penghuni = self.table.item(row, 1).text()
+            pesan = self.table.item(row, 2).text()
+            
+            details = f"""
+            <b>Detail Feedback</b><br><br>
+            <table>
+            <tr><td><b>Tanggal</b></td><td>: {tanggal}</td></tr>
+            <tr><td><b>Penghuni</b></td><td>: {penghuni}</td></tr>
+            </table>
+            <br>
+            <b>Pesan:</b><br>
+            <p style='background-color:#F5F5F5; padding:10px; border-radius:5px;'>{pesan}</p>
+            """
+            
+            msg = QMessageBox(self)
+            msg.setWindowTitle("View Feedback")
+            msg.setTextFormat(Qt.TextFormat.RichText)
+            msg.setText(details)
+            msg.setIcon(QMessageBox.Icon.Information)
+            msg.exec()
+        except Exception:
+            pass
 
 # --- Test Standalone ---
 if __name__ == "__main__":

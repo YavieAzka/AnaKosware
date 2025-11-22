@@ -24,7 +24,6 @@ except ImportError:
 class LoginWindow(QWidget):
     def __init__(self):
         super().__init__()
-        
         # Inisialisasi Service
         if AuthService:
             self.auth_service = AuthService()
