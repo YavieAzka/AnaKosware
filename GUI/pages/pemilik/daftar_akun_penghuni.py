@@ -7,12 +7,27 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QDate
 from PyQt6.QtGui import QFont, QCursor, QColor
 
+# --- IMPORT BACKEND ---
+# Pastikan path ini sesuai dengan struktur folder project Anda
+# Contoh: dari folder 'services' atau 'database'
+try:
+    from auth.auth_service import AuthService
+except ImportError:
+    # Fallback class untuk testing jika file backend belum ada/path salah
+    print("Warning: Backend not found. Using Dummy Service.")
+    class AuthService:
+        def register_penghuni(self, username, nama, password):
+            return {"status": "success", "message": "[MOCK] Registrasi berhasil!"}
+
 class DaftarAkunPenghuni(QWidget):
     """Page untuk daftarkan akun baru penghuni"""
     
     def __init__(self, parent=None, controller=None):
         super().__init__(parent)
         self.controller = controller
+        
+        # --- INISIALISASI SERVICE BACKEND ---
+        self.auth_service = AuthService()
         
         # Setup properti dasar
         self.setObjectName("MainPage")
@@ -25,10 +40,10 @@ class DaftarAkunPenghuni(QWidget):
         """Create page content"""
         # --- Layout Utama Halaman ---
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0) # Hilangkan margin luar agar full
+        main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
         
-        # --- 1. Header Title (Tetap diam di atas) ---
+        # --- 1. Header Title ---
         header_container = QWidget()
         header_layout = QVBoxLayout(header_container)
         header_layout.setContentsMargins(40, 30, 40, 20)
@@ -39,29 +54,25 @@ class DaftarAkunPenghuni(QWidget):
         
         main_layout.addWidget(header_container)
         
-        # --- 2. Scroll Area (Agar responsif di layar apapun) ---
+        # --- 2. Scroll Area ---
         self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True) # Penting! Agar konten bisa resize
-        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame) # Hilangkan border scroll area
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         
-        # Container untuk isi Scroll Area
         scroll_content = QWidget()
         scroll_content.setObjectName("ScrollContent")
         
-        # Layout untuk memusatkan Form di tengah Scroll Area
         scroll_layout = QVBoxLayout(scroll_content)
-        scroll_layout.setContentsMargins(40, 10, 40, 40) # Margin agar shadow tidak terpotong
+        scroll_layout.setContentsMargins(40, 10, 40, 40)
         scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
         
-        # --- 3. Form Container (Kotak Putus-putus) ---
+        # --- 3. Form Container ---
         self.form_container = QFrame()
         self.form_container.setObjectName("FormContainer")
-        # Batasi lebar maksimum agar form tidak terlalu lebar saat full screen
         self.form_container.setMaximumWidth(900) 
         self.form_container.setMinimumWidth(600)
         
-        # Efek Shadow
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(25)
         shadow.setXOffset(0)
@@ -69,31 +80,24 @@ class DaftarAkunPenghuni(QWidget):
         shadow.setColor(QColor(0, 0, 0, 20))
         self.form_container.setGraphicsEffect(shadow)
         
-        # Layout ISIAN Form
         form_layout = QVBoxLayout(self.form_container)
         form_layout.setContentsMargins(40, 40, 40, 40)
         form_layout.setSpacing(25)
         
         # --- Field Input ---
-        
-        # Nama
         self.nama_input = self.create_input_group(form_layout, "Nama Penghuni", "Masukkan Nama Penghuni")
         
-        # Row: Tanggal & Telepon
         row_layout = QHBoxLayout()
         row_layout.setSpacing(30)
         
-        # Tanggal
         date_container = self.create_date_picker()
         row_layout.addWidget(date_container, 1)
         
-        # Telepon
         phone_container = self.create_phone_input()
         row_layout.addWidget(phone_container, 1)
         
         form_layout.addLayout(row_layout)
         
-        # Sisanya
         self.kamar_input = self.create_input_group(form_layout, "Nomor Kamar Penghuni", "Masukkan Nomor Kamar")
         self.harga_input = self.create_input_group(form_layout, "Harga Kamar Penghuni", "Masukkan Harga (Rp.)")
         self.username_input = self.create_input_group(form_layout, "Username Akun Penghuni", "Masukkan Username")
@@ -105,7 +109,7 @@ class DaftarAkunPenghuni(QWidget):
         self.submit_btn = QPushButton("Daftarkan Akun Penghuni")
         self.submit_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.submit_btn.clicked.connect(self.submit_form)
-        self.submit_btn.setFixedHeight(55) # Height fix
+        self.submit_btn.setFixedHeight(55)
         
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
@@ -113,12 +117,11 @@ class DaftarAkunPenghuni(QWidget):
         btn_layout.addStretch()
         form_layout.addLayout(btn_layout)
         
-        # Finishing Layout hierarchy
         scroll_layout.addWidget(self.form_container)
         self.scroll_area.setWidget(scroll_content)
         main_layout.addWidget(self.scroll_area)
 
-    # --- Helper Methods ---
+    # --- Helper Methods (Sama seperti sebelumnya) ---
 
     def create_input_group(self, parent_layout, label_text, placeholder, is_password=False):
         container = QWidget()
@@ -131,8 +134,7 @@ class DaftarAkunPenghuni(QWidget):
         
         inp = QLineEdit()
         inp.setPlaceholderText(placeholder)
-        inp.setMinimumHeight(50) # Pastikan tinggi cukup
-        # Set Policy agar tidak bisa diperkecil paksa oleh layout
+        inp.setMinimumHeight(50)
         inp.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         
         if is_password:
@@ -180,7 +182,7 @@ class DaftarAkunPenghuni(QWidget):
         
         prefix = QLabel("+62")
         prefix.setObjectName("PrefixLabel")
-        prefix.setFixedSize(60, 50) # Fixed size match input height
+        prefix.setFixedSize(60, 50)
         prefix.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         self.phone_input = QLineEdit()
@@ -205,8 +207,6 @@ class DaftarAkunPenghuni(QWidget):
                 background-color: transparent;
                 border: none;
             }
-            
-            /* Typography */
             QLabel#PageTitle {
                 font-family: 'Segoe UI', sans-serif;
                 font-size: 26px;
@@ -219,17 +219,13 @@ class DaftarAkunPenghuni(QWidget):
                 font-weight: 700;
                 color: #4A5568;
             }
-            
-            /* Form Box */
             QFrame#FormContainer {
                 background-color: white;
-                border: 1px dashed #E2E8F0; /* Warna border lebih halus */
+                border: 1px dashed #E2E8F0;
                 border-radius: 20px;
             }
-            
-            /* Input Fields */
             QLineEdit, QDateEdit {
-                background-color: #F8FAFC; /* Warna background input sedikit abu */
+                background-color: #F8FAFC;
                 border: 1px solid #CBD5E0;
                 border-radius: 10px;
                 padding: 0 15px;
@@ -239,10 +235,8 @@ class DaftarAkunPenghuni(QWidget):
             }
             QLineEdit:focus, QDateEdit:focus {
                 background-color: white;
-                border: 2px solid #FF9966; /* Highlight orange */
+                border: 2px solid #FF9966;
             }
-            
-            /* Phone Prefix */
             QLabel#PrefixLabel {
                 background-color: #EDF2F7;
                 border: 1px solid #CBD5E0;
@@ -252,8 +246,6 @@ class DaftarAkunPenghuni(QWidget):
                 color: #4A5568;
                 font-size: 15px;
             }
-            
-            /* Button */
             QPushButton {
                 background-color: #FF9966;
                 color: white;
@@ -264,27 +256,77 @@ class DaftarAkunPenghuni(QWidget):
             }
             QPushButton:hover {
                 background-color: #FF8C4D;
-                margin-top: 2px; /* Efek tekan halus */
+                margin-top: 2px;
             }
             QPushButton:pressed {
                 background-color: #E67300;
             }
         """)
 
+    # --- LOGIC UTAMA KONEKSI KE BACKEND ---
+    
+    def validate_inputs(self):
+        """Validasi form sederhana"""
+        if not self.nama_input.text().strip():
+            QMessageBox.warning(self, "Validasi Error", "Nama Penghuni tidak boleh kosong.")
+            return False
+        if not self.username_input.text().strip():
+            QMessageBox.warning(self, "Validasi Error", "Username tidak boleh kosong.")
+            return False
+        if not self.password_input.text().strip():
+            QMessageBox.warning(self, "Validasi Error", "Password tidak boleh kosong.")
+            return False
+        # Tambahkan validasi lain sesuai kebutuhan
+        return True
+
     def submit_form(self):
-        # Logic validasi sama seperti sebelumnya
-        data = {
-            'nama': self.nama_input.text(),
-            'tanggal_masuk': self.date_input.date().toString("dd/MM/yyyy"),
-            'telepon': self.phone_input.text(),
-            'kamar': self.kamar_input.text(),
-            'harga': self.harga_input.text(),
-            'username': self.username_input.text(),
-            'password': self.password_input.text()
-        }
-        print("Data Submitted:", data)
-        QMessageBox.information(self, "Sukses", "Data berhasil disimpan!")
-        self.clear_form()
+        """
+        Mengirim data ke AuthService
+        """
+        # 1. Validasi Input
+        if not self.validate_inputs():
+            return
+
+        # 2. Ambil Data dari UI
+        # Note: AuthService saat ini hanya menerima username, nama, password
+        # Data lain (telepon, kamar, harga, tanggal) idealnya disimpan ke tabel 
+        # detail penghuni terpisah atau update backend `register_penghuni` untuk menerima semua parameter.
+        
+        username = self.username_input.text().strip()
+        nama = self.nama_input.text().strip()
+        password = self.password_input.text().strip()
+        
+        # Data tambahan (Disiapkan untuk pengembangan backend selanjutnya)
+        telepon = self.phone_input.text().strip()
+        kamar = self.kamar_input.text().strip()
+        harga = self.harga_input.text().strip()
+        tanggal = self.date_input.date().toString("yyyy-MM-dd") # Format SQL standar
+
+        # 3. Panggil Backend
+        try:
+            # Panggil fungsi register dari AuthService
+            result = self.auth_service.register_penghuni(
+                username=username,
+                nama=nama,
+                password=password
+            )
+            
+            # 4. Cek Response
+            if result["status"] == "success":
+                # Jika sukses, tampilkan pesan
+                QMessageBox.information(self, "Sukses", result["message"])
+                
+                # TODO: Jika backend sudah support, simpan detail tambahan (telepon, kamar, dll) disini
+                # self.auth_service.save_penghuni_details(username, telepon, kamar, harga, tanggal)
+                
+                self.clear_form()
+            else:
+                # Jika gagal (misal username sudah ada)
+                QMessageBox.warning(self, "Gagal", result["message"])
+                
+        except Exception as e:
+            # Error handling jika database mati atau error kode
+            QMessageBox.critical(self, "System Error", f"Terjadi kesalahan: {str(e)}")
 
     def clear_form(self):
         self.nama_input.clear()
@@ -301,7 +343,7 @@ if __name__ == "__main__":
     app.setFont(QFont("Segoe UI", 10))
     
     window = DaftarAkunPenghuni()
-    window.resize(1200, 800) # Test ukuran besar
+    window.resize(1200, 800)
     window.show()
     
     sys.exit(app.exec())

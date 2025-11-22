@@ -35,10 +35,10 @@ class AuthService:
             }
 
         query = """
-            INSERT INTO user (username, nama, password, jenis_akun, status_akun)
+            INSERT INTO user (username, nama, password, jenisAkun, statusAkun)
             VALUES (%s, %s, %s, %s, %s)
         """
-        params = (username, nama, password, "PENGHUNI", 1)
+        params = (username, nama, password, "P", 1)
 
         rowcount = self.db.execute_update(query, params)
 
