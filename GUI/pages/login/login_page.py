@@ -4,11 +4,35 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QFont, QPixmap
 
+# --- IMPORT BACKEND & MAIN VIEW ---
+# Pastikan path import ini sesuai dengan struktur folder Anda
+try:
+    from auth.auth_service import AuthService
+except ImportError:
+    print("Warning: AuthService not found. Database features disabled.")
+    AuthService = None
+
+try:
+    # Asumsi file MainViewPemilik disimpan di GUI/main_view_pemilik.py
+    # Sesuaikan path ini dengan lokasi file MainViewPemilik Anda!
+    from GUI.pages.pemilik.main_view_pemilik import MainViewPemilik
+except ImportError:
+    print("Warning: MainViewPemilik not found. Redirection disabled.")
+    MainViewPemilik = None
+
+
 class LoginWindow(QWidget):
     def __init__(self):
         super().__init__()
-        # self.auth_service = AuthService()
+        
+        # Inisialisasi Service
+        if AuthService:
+            self.auth_service = AuthService()
+        else:
+            self.auth_service = None
+            
         self.init_ui()
+        
         # Load background image after window is shown
         QTimer.singleShot(100, self.load_background_image)
 
@@ -16,11 +40,13 @@ class LoginWindow(QWidget):
         if not hasattr(self, 'lbl_background'):
             return
 
-        image_path = r"D:\Kulyeah\Sem-3\Software-Engineering\Tubes\IF2150-2025-K02-G05-AnaKosware\assets\image\login_pic.jpg"
+        # Pastikan path image ini BENAR di komputer Anda
+        image_path = r"assets/image/login_pic.jpg" 
         
         pixmap = QPixmap(image_path)
         
         if pixmap.isNull():
+            # Fallback UI jika gambar tidak ketemu
             self.lbl_background.setText("🏢")
             self.lbl_background.setStyleSheet("""
                 QLabel {
@@ -93,8 +119,6 @@ class LoginWindow(QWidget):
         left_layout.setContentsMargins(80, 60, 80, 60)
         left_container.setLayout(left_layout)
 
-        # Logo
-        lbl_logo = QLabel("AnaKosware")
         # Logo + Title Container (horizontal)
         logo_title_layout = QHBoxLayout()
         logo_title_layout.setSpacing(15)
@@ -102,11 +126,11 @@ class LoginWindow(QWidget):
 
         # Logo AnaKosware
         lbl_icon = QLabel()
-        logo_path = r"D:\Kulyeah\Sem-3\Software-Engineering\Tubes\IF2150-2025-K02-G05-AnaKosware\assets\image\AnaKosware_Logo.png"
+        # Pastikan path logo benar
+        logo_path = r"assets/image/AnaKosware_Logo.png"
         
         pixmap = QPixmap(logo_path)
         if not pixmap.isNull():
-            # Ukuran logo: 48x48 atau 56x56 (sesuaikan dengan desain Anda)
             scaled_logo = pixmap.scaled(
                 56, 56,
                 Qt.AspectRatioMode.KeepAspectRatio,
@@ -114,7 +138,7 @@ class LoginWindow(QWidget):
             )
             lbl_icon.setPixmap(scaled_logo)
         else:
-            # Fallback jika logo tidak ditemukan
+            # Fallback
             lbl_icon.setText("AK")
             lbl_icon.setStyleSheet("""
                 QLabel {
@@ -131,8 +155,8 @@ class LoginWindow(QWidget):
         lbl_icon.setFixedSize(56, 56)
 
         # Title AnaKosware (besar)
-        lbl_logo = QLabel("AnaKosware")
-        lbl_logo.setStyleSheet("""
+        lbl_logo_text = QLabel("AnaKosware")
+        lbl_logo_text.setStyleSheet("""
             QLabel {
                 color: #2C2C2C;
                 font-size: 32px;
@@ -143,17 +167,13 @@ class LoginWindow(QWidget):
 
         # Tambahkan ke layout horizontal
         logo_title_layout.addWidget(lbl_icon)
-        logo_title_layout.addWidget(lbl_logo)
+        logo_title_layout.addWidget(lbl_logo_text)
         logo_title_layout.addStretch()
-
-        # Ganti penambahan lbl_logo lama dengan layout baru
-        # Hapus baris ini jika masih ada:
-        # left_layout.addWidget(lbl_logo)
 
         # Tambahkan layout logo + title
         left_layout.addLayout(logo_title_layout)
 
-        # Title
+        # Title Page
         lbl_title = QLabel("Login")
         lbl_title.setStyleSheet("""
             QLabel {
@@ -213,7 +233,7 @@ class LoginWindow(QWidget):
         lbl_password = QLabel("Password")
         lbl_password.setStyleSheet("color: #2C2C2C; font-size: 13px; margin-top: 15px; margin-bottom: 5px;")
         
-        # Password container with eye icon
+        # Password container
         password_container = QFrame()
         password_container.setStyleSheet("""
             QFrame {
@@ -299,7 +319,7 @@ class LoginWindow(QWidget):
         left_layout.addStretch()
         left_layout.addWidget(lbl_terms)
 
-                # --- RIGHT SIDE: Image/Visual Container ---
+        # --- RIGHT SIDE: Image/Visual Container ---
         self.right_container = QFrame()
         self.right_container.setStyleSheet("""
             QFrame {
@@ -313,7 +333,7 @@ class LoginWindow(QWidget):
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(0)
 
-        # Background label yang benar-benar mengisi seluruh area
+        # Background label
         self.lbl_background = QLabel()
         self.lbl_background.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_background.setStyleSheet("""
@@ -322,10 +342,8 @@ class LoginWindow(QWidget):
                 border-bottom-left-radius: 40px;
             }
         """)
-        # JANGAN gunakan setScaledContents(True) → hasil buram
         self.lbl_background.setScaledContents(False)
 
-        # Tambahkan label ke layout agar otomatis mengisi
         right_layout.addWidget(self.lbl_background)
 
         # Overlay untuk tombol close
@@ -359,10 +377,8 @@ class LoginWindow(QWidget):
         overlay_layout.addLayout(close_layout)
         overlay_layout.addStretch()
 
-        # Pastikan overlay selalu di atas
         self.overlay_widget.raise_()
 
-        # Add containers to main layout
         main_layout.addWidget(left_container, 45)
         main_layout.addWidget(self.right_container, 55)
 
@@ -404,20 +420,26 @@ class LoginWindow(QWidget):
                 background-color: #FFC850;
             }
         """)
-        
         msg.exec()
 
     def handle_login(self):
+        """Menangani logika login"""
+        # 1. Cek apakah service tersedia
+        if not self.auth_service:
+            self.show_popup("Error", "Koneksi database tidak tersedia.", is_error=True)
+            return
+
+        # 2. Ambil data input
         username = self.txt_username.text().strip()
         password = self.txt_password.text().strip()
         role_text = self.combo_role.currentText()
 
-        # Validation
+        # 3. Validasi sederhana
         if not username or not password:
-            self.show_popup("Error", "Username dan password tidak boleh kosong!", is_error=True)
+            self.show_popup("Validasi Error", "Username dan password tidak boleh kosong!", is_error=True)
             return
 
-        # Role mapping
+        # 4. Mapping Role (UI Text -> Database Code)
         role_map = {
             "Penghuni": "P",
             "Pemilik":  "O",
@@ -425,15 +447,42 @@ class LoginWindow(QWidget):
         }
         jenis_akun = role_map.get(role_text)
 
-        # Backend call (uncomment when ready)
-        # result = self.auth_service.login(jenis_akun, username, password)
-        # if result["status"] == "success":
-        #     self.show_popup("Berhasil", f"Selamat datang, {result['user']['nama']}!", is_error=False)
-        # else:
-        #     self.show_popup("Login Gagal", result["message"], is_error=True)
-        
-        # Demo response
-        self.show_popup("Login Demo", f"Login sebagai {role_text}\nUsername: {username}", is_error=False)
+        try:
+            # 5. Panggil Backend
+            result = self.auth_service.login(jenis_akun, username, password)
+
+            if result["status"] == "success":
+                user_data = result["user"]
+                
+                # --- LOGIC REDIRECT BERDASARKAN ROLE ---
+                
+                if jenis_akun == "O": # Jika Pemilik
+                    if MainViewPemilik:
+                        # Buat window utama Pemilik
+                        self.main_window = MainViewPemilik()
+                        # (Opsional) Oper data user ke window utama jika perlu
+                        self.main_window.current_user_name = user_data["nama"]
+                        self.main_window.current_user_role = role_text
+                        
+                        self.main_window.show()
+                        self.close() # Tutup login
+                    else:
+                        self.show_popup("Error", "File MainViewPemilik tidak ditemukan.", is_error=True)
+
+                elif jenis_akun == "P": # Jika Penghuni
+                    # Placeholder untuk View Penghuni
+                    self.show_popup("Login Berhasil", f"Selamat datang Penghuni: {user_data['nama']}\n(Halaman Penghuni Coming Soon)", is_error=False)
+                
+                elif jenis_akun == "S": # Jika Penjaga
+                    # Placeholder untuk View Penjaga
+                    self.show_popup("Login Berhasil", f"Selamat datang Penjaga: {user_data['nama']}\n(Halaman Penjaga Coming Soon)", is_error=False)
+
+            else:
+                # Login Gagal
+                self.show_popup("Login Gagal", result["message"], is_error=True)
+
+        except Exception as e:
+            self.show_popup("System Error", f"Terjadi kesalahan: {str(e)}", is_error=True)
 
 
 if __name__ == "__main__":
