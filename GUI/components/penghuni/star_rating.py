@@ -1,41 +1,75 @@
-# components/star_rating.py
-import tkinter as tk
+# components/penghuni/star_rating.py
+from PyQt6.QtWidgets import QWidget, QPushButton, QHBoxLayout
+from PyQt6.QtGui import QFont
+from PyQt6.QtCore import Qt
 
-class StarRating(tk.Frame):
-    """Component for star rating"""
 
-    def __init__(self, master, rating_variable, max_stars=5):
-        super().__init__(master, bg='white')
-        
-        self.rating_variable = rating_variable
+class StarRating(QWidget):
+    """Komponen rating bintang untuk PyQt6"""
+
+    def __init__(self, parent=None, max_stars=5, on_rating_changed=None):
+        super().__init__(parent)
+
         self.max_stars = max_stars
-        self.star_buttons = []
+        self.on_rating_changed = on_rating_changed
+        self.current_rating = 0
+
+        self.stars = []
+        self.layout = QHBoxLayout()
+        self.layout.setSpacing(8)
+        self.layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.setLayout(self.layout)
 
         self.create_stars()
 
     def create_stars(self):
-        """Create the star buttons for rating"""
+        """Membuat tombol bintang"""
         for i in range(1, self.max_stars + 1):
-            button = tk.Button(
-                self, 
-                text="★", 
-                font=('Arial', 18), 
-                fg="systemButtonFace",  # Use systemButtonFace to simulate transparency
-                bg='white', 
-                activebackground='white', 
-                relief="flat", 
-                command=lambda i=i: self.set_rating(i)
-            )
-            button.grid(row=0, column=i-1, padx=5)
-            self.star_buttons.append(button)
+            star_btn = QPushButton("★")
+            star_btn.setFont(QFont("Arial", 22))
+            star_btn.setFixedSize(32, 32)
 
-    def set_rating(self, rating_value):
-        """Set the rating when a star is clicked"""
-        self.rating_variable.set(rating_value)
+            star_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: transparent;
+                    border: none;
+                    color: #CCCCCC;
+                }
+                QPushButton:hover {
+                    color: #F7D116;
+                }
+            """)
 
-        # Update the color of the stars based on the rating
-        for i, button in enumerate(self.star_buttons):
-            if i < rating_value:
-                button.config(fg="#F7D116")  # Yellow color for selected stars
+            star_btn.clicked.connect(lambda _, s=i: self.set_rating(s))
+
+            self.stars.append(star_btn)
+            self.layout.addWidget(star_btn)
+
+    def set_rating(self, value):
+        """Mengatur rating ketika bintang ditekan"""
+        self.current_rating = value
+
+        for i, star in enumerate(self.stars):
+            if i < value:
+                star.setStyleSheet("""
+                    QPushButton {
+                        background-color: transparent;
+                        border: none;
+                        color: #F7D116;
+                    }
+                """)
             else:
-                button.config(fg="systemButtonFace")  # Reset to default color (transparent-like effect)
+                star.setStyleSheet("""
+                    QPushButton {
+                        background-color: transparent;
+                        border: none;
+                        color: #CCCCCC;
+                    }
+                """)
+
+        if self.on_rating_changed:
+            self.on_rating_changed(value)
+
+    def reset_rating(self):
+        """Reset ke nol"""
+        self.set_rating(0)
