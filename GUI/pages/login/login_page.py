@@ -4,8 +4,6 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QFont, QPixmap
 
-# --- IMPORT BACKEND & MAIN VIEW ---
-# Pastikan path import ini sesuai dengan struktur folder Anda
 try:
     from auth.auth_service import AuthService
 except ImportError:
@@ -13,8 +11,6 @@ except ImportError:
     AuthService = None
 
 try:
-    # Asumsi file MainViewPemilik disimpan di GUI/main_view_pemilik.py
-    # Sesuaikan path ini dengan lokasi file MainViewPemilik Anda!
     from GUI.pages.pemilik.main_view_pemilik import MainViewPemilik
 except ImportError:
     print("Warning: MainViewPemilik not found. Redirection disabled.")
@@ -39,7 +35,6 @@ class LoginWindow(QWidget):
         if not hasattr(self, 'lbl_background'):
             return
 
-        # Pastikan path image ini BENAR di komputer Anda
         image_path = r"assets/image/login_pic.jpg" 
         
         pixmap = QPixmap(image_path)
@@ -125,7 +120,6 @@ class LoginWindow(QWidget):
 
         # Logo AnaKosware
         lbl_icon = QLabel()
-        # Pastikan path logo benar
         logo_path = r"assets/image/AnaKosware_Logo.png"
         
         pixmap = QPixmap(logo_path)
@@ -423,22 +417,22 @@ class LoginWindow(QWidget):
 
     def handle_login(self):
         """Menangani logika login"""
-        # 1. Cek apakah service tersedia
+        # Cek apakah service tersedia
         if not self.auth_service:
             self.show_popup("Error", "Koneksi database tidak tersedia.", is_error=True)
             return
 
-        # 2. Ambil data input
+        # Ambil data input
         username = self.txt_username.text().strip()
         password = self.txt_password.text().strip()
         role_text = self.combo_role.currentText()
 
-        # 3. Validasi sederhana
+        # Validasi sederhana
         if not username or not password:
             self.show_popup("Validasi Error", "Username dan password tidak boleh kosong!", is_error=True)
             return
 
-        # 4. Mapping Role (UI Text -> Database Code)
+        # Mapping Role (UI Text -> Database Code)
         role_map = {
             "Penghuni": "P",
             "Pemilik":  "O",
@@ -447,7 +441,7 @@ class LoginWindow(QWidget):
         jenis_akun = role_map.get(role_text)
 
         try:
-            # 5. Panggil Backend
+            # Panggil Backend
             result = self.auth_service.login(jenis_akun, username, password)
 
             if result["status"] == "success":
@@ -459,7 +453,7 @@ class LoginWindow(QWidget):
                     if MainViewPemilik:
                         # Buat window utama Pemilik
                         self.main_window = MainViewPemilik()
-                        # (Opsional) Oper data user ke window utama jika perlu
+                        # Oper data user ke window utama jika perlu
                         self.main_window.current_user_name = user_data["nama"]
                         self.main_window.current_user_role = role_text
                         
