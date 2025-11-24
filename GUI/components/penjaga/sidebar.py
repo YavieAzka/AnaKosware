@@ -1,155 +1,109 @@
-"""
-Sidebar component penjaga for AnaKosware application.
-"""
-from PIL import Image, ImageTk
+from PyQt6.QtWidgets import (
+    QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout,
+    QFrame, QSizePolicy
+)
+from PyQt6.QtGui import QPixmap, QFont
+from PyQt6.QtCore import Qt
 import os
-import tkinter as tk
 
 
+class Sidebar(QWidget):
+    """Reusable sidebar component with navigation menu"""
 
-class Sidebar(tk.Frame):
-    """Reusable sidebar with navigation menu"""
-    
-    def __init__(self, parent, on_menu_click=None, active_menu='dashboard'):
-            super().__init__(parent, bg='#EFE5B7', width=250)
-            self.pack_propagate(False)
-            
-            self.on_menu_click = on_menu_click
-            self.active_menu = active_menu
-            
-            self.create_logo()
-            self.create_navigation()
-            self.create_logout()
-        
+    def __init__(self, parent=None, on_menu_click=None, active_menu="dashboard"):
+        super().__init__(parent)
+        self.on_menu_click = on_menu_click
+        self.active_menu = active_menu
+
+        self.setFixedWidth(250)
+        self.setStyleSheet("background-color: #EFE5B7;")
+
+        self.layout = QVBoxLayout()
+        self.layout.setContentsMargins(0, 20, 0, 20)
+        self.layout.setSpacing(10)
+        self.setLayout(self.layout)
+
+        self.create_logo()
+        self.create_navigation()
+        self.create_logout()
+
     def create_logo(self):
-        """Create logo section at top"""
+        logo_container = QVBoxLayout()
+        logo_container.setContentsMargins(0, 40, 0, 40)
 
-        logo_frame = tk.Frame(self, bg='#EFE5B7')
-        logo_frame.pack(pady=(40, 40))
+        logo_label = QLabel()
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        # Load logo image
+        # load image
         logo_path = os.path.join("assets", "image", "AnaKosware Logo.png")
+        pixmap = QPixmap(logo_path).scaled(180, 180, Qt.AspectRatioMode.KeepAspectRatio,
+                                           Qt.TransformationMode.SmoothTransformation)
+        logo_label.setPixmap(pixmap)
 
-        # Open and resize
-        logo_img = Image.open(logo_path)
-        logo_img = logo_img.resize((180, 180), Image.LANCZOS)
+        logo_container.addWidget(logo_label)
+        self.layout.addLayout(logo_container)
 
-        # Convert to PhotoImage
-        self.logo_photo = ImageTk.PhotoImage(logo_img)
-
-        # Display the image
-        logo_label = tk.Label(logo_frame, image=self.logo_photo, bg='#EFE5B7')
-        logo_label.pack()
-    
     def create_navigation(self):
-        """Create navigation menu items"""
         menu_items = [
-            ("🏠", "dashboard", "dashboard"),
+            ("🏠", "Dashboard", "dashboard"),
             ("🛒", "Layanan", "layanan"),
         ]
-        
+
         for icon, text, menu_id in menu_items:
             self.create_menu_item(icon, text, menu_id)
-    
+
     def create_menu_item(self, icon, text, menu_id):
-        """Create individual menu item"""
         is_active = (menu_id == self.active_menu)
-        
-        # Container with padding
-        container = tk.Frame(self, bg='#EFE5B7')
-        container.pack(fill=tk.X, padx=10, pady=0)
-        
-        # Menu item frame
-        bg_color = 'white' if is_active else '#EFE5B7'
-        item_frame = tk.Frame(container, bg=bg_color, cursor='hand2')
-        item_frame.pack(fill=tk.X, pady=1)
-        
-        # Add rounded effect for active item
-        if is_active:
-            item_frame.config(relief='flat')
-        
-        # Content frame
-        content = tk.Frame(item_frame, bg=bg_color)
-        content.pack(fill=tk.X, padx=12, pady=5)
-        
-        # Icon
-        icon_label = tk.Label(
-            content,
-            text=icon,
-            font=('Arial', 14),
-            bg=bg_color,
-            fg='#2D3142'
-        )
-        icon_label.pack(side=tk.LEFT, padx=(0, 10))
-        
-        # Text
-        text_label = tk.Label(
-            content,
-            text=text,
-            font=('Arial', 10, 'bold' if is_active else 'normal'),
-            bg=bg_color,
-            fg='#2D3142'
-        )
-        text_label.pack(side=tk.LEFT)
-        
-        # Click handler
+
+        bg_color = "#FFFFFF" if is_active else "#EFE5B7"
+        font_weight = "bold" if is_active else "normal"
+
+        item = QPushButton(f"{icon}  {text}")
+        item.setCursor(Qt.CursorShape.PointingHandCursor)
+        item.setFixedHeight(45)
+        item.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {bg_color};
+                border: none;
+                text-align: left;
+                padding-left: 18px;
+                font-size: 14px;
+                font-weight: {font_weight};
+                color: #2D3142;
+            }}
+            QPushButton:hover {{
+                background-color: #DCC9A0;
+            }}
+        """)
+
         if self.on_menu_click:
-            def click(e):
-                self.on_menu_click(menu_id)
-            
-            item_frame.bind('<Button-1>', click)
-            content.bind('<Button-1>', click)
-            icon_label.bind('<Button-1>', click)
-            text_label.bind('<Button-1>', click)
-        
-        # Hover effect for inactive items
-        if not is_active:
-            def on_enter(e):
-                item_frame.config(bg='#DCC9A0')
-                content.config(bg='#DCC9A0')
-                icon_label.config(bg='#DCC9A0')
-                text_label.config(bg='#DCC9A0')
-            
-            def on_leave(e):
-                item_frame.config(bg='#EFE5B7')
-                content.config(bg='#EFE5B7')
-                icon_label.config(bg='#EFE5B7')
-                text_label.config(bg='#EFE5B7')
-            
-            item_frame.bind('<Enter>', on_enter)
-            item_frame.bind('<Leave>', on_leave)
-            content.bind('<Enter>', on_enter)
-            content.bind('<Leave>', on_leave)
-    
+            item.clicked.connect(lambda _, m=menu_id: self.on_menu_click(m))
+
+        self.layout.addWidget(item)
+
     def create_logout(self):
-        """Create logout button at bottom"""
-        # Spacer to push logout to bottom
-        spacer = tk.Frame(self, bg='#EFE5B7')
-        spacer.pack(fill=tk.BOTH, expand=True)
-        
-        # Logout item
-        logout_container = tk.Frame(self, bg='#EFE5B7')
-        logout_container.pack(fill=tk.X, padx=15, pady=3)
-        
-        logout_frame = tk.Frame(logout_container, bg='#EFE5B7', cursor='hand2')
-        logout_frame.pack(fill=tk.X, pady=5)
-        
-        content = tk.Frame(logout_frame, bg='#EFE5B7')
-        content.pack(fill=tk.X, padx=15, pady=10)
-        
-        icon = tk.Label(content, text="🚪", font=('Arial', 14), 
-                       bg='#EFE5B7', fg='#2D3142')
-        icon.pack(side=tk.LEFT, padx=(0, 10))
-        
-        text = tk.Label(content, text="Logout", font=('Arial', 10),
-                       bg='#EFE5B7', fg='#2D3142')
-        text.pack(side=tk.LEFT)
-        
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.layout.addWidget(spacer)
+
+        logout_btn = QPushButton("🚪  Logout")
+        logout_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        logout_btn.setFixedHeight(45)
+        logout_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #EFE5B7;
+                border: none;
+                text-align: left;
+                padding-left: 18px;
+                font-size: 14px;
+                color: #2D3142;
+            }
+            QPushButton:hover {
+                background-color: #DCC9A0;
+            }
+        """)
+
         if self.on_menu_click:
-            def logout_click(e):
-                self.on_menu_click('logout')
-            
-            logout_frame.bind('<Button-1>', logout_click)
-            content.bind('<Button-1>', logout_click)
-            icon.bind('<Button-1>', logout_click)
-            text.bind('<Button-1>', logout_click)
+            logout_btn.clicked.connect(lambda: self.on_menu_click("logout"))
+
+        self.layout.addWidget(logout_btn)
