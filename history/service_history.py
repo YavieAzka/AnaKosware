@@ -18,22 +18,23 @@ class ServiceHistory:
         # Query dengan JOIN (Request -> User -> Penghuni -> Layanan)
         query = """
             SELECT 
-                r.id AS request_id,
+                r.request_id,
                 r.tanggal_request,
                 u.username,
                 u.nama AS nama_penghuni,
-                p.nomor_kamar,
-                r.nama_layanan,
-                l.harga AS total_harga,
-                l.deskripsi,
-                l.kebutuhan,
+                pg.nomor_kamar,
+                l.nama_layanan,
+                pym.nominal_pembayaran AS total_harga,
+                l.deskripsi_layanan,
+                l.kebutuhan_layanan,
                 r.status_request,
-                r.status_bayar_kebutuhan,
-                r.bukti_bayar
+                r.status_bayar,
+                pym.bukti_pembayaran
             FROM request r
-            LEFT JOIN user u ON r.nama = u.nama 
-            LEFT JOIN penghuni p ON u.user_id = p.user_id
-            LEFT JOIN layanan l ON LOWER(r.nama_layanan) = LOWER(l.nama)
+            JOIN user u ON r.user_id = u.user_id
+            LEFT JOIN penghuni pg ON u.user_id = pg.user_id
+            JOIN layanan l ON r.layanan_id = l.layanan_id
+            LEFT JOIN pembayaran pym ON r.request_id = pym.request_id AND pym.jenis_pembayaran = 'LAYANAN'
             WHERE 1=1
         """
         
@@ -91,7 +92,7 @@ class ServiceHistory:
                      tgl_formatted = tgl_mentah.strftime("%d/%m/%Y")
 
             status_text = "Selesai" if row['status_request'] else "Sedang dikerjakan"
-            items = row['kebutuhan'] if row['kebutuhan'] else "Tidak ada rincian"
+            items = row['kebutuhan_layanan'] if row['kebutuhan_layanan'] else "Tidak ada rincian"
 
             history.append({
                 "id": row['request_id'],
@@ -103,6 +104,6 @@ class ServiceHistory:
                 "rincian_barang": items, 
                 "status": status_text,
                 "total_harga": row['total_harga'],
-                "bukti_upload": row['bukti_bayar']
+                "bukti_upload": row['bukti_pembayaran']
             })
         return history
