@@ -1,100 +1,136 @@
+"""
+Layanan Page (Penghuni) - Modern PyQt6 Version
+Style: Grid Cards, Clean UI, Dark Mode Proof.
+"""
+import sys
 from PyQt6.QtWidgets import (
     QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout,
-    QGridLayout, QFrame, QMessageBox
+    QGridLayout, QFrame, QMessageBox, QGraphicsDropShadowEffect
 )
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFont, QColor, QCursor
 from PyQt6.QtCore import Qt
 
+# --- IMPORT DIALOG KOMPONEN ---
+try:
+    from GUI.components.penghuni.layanan_laundry import LaundryInputDialog
+    from GUI.components.penghuni.layanan_catering import CateringInputDialog
+    from GUI.components.penghuni.layanan_refill import RefillGalonDialog
+    from GUI.components.penghuni.layanan_belanja import BelanjaInputDialog
+except ImportError:
+    print("Warning: Komponen layanan tidak ditemukan. Pastikan file ada di folder components/penghuni/")
+    LaundryInputDialog = None
+    CateringInputDialog = None
+    RefillGalonDialog = None
+    BelanjaInputDialog = None
 
 class PenghuniLayananPage(QWidget):
     def __init__(self):
         super().__init__()
+        self.setObjectName("LayananPage")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        
+        self._setup_styles()
+        self._setup_ui()
 
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(30, 25, 30, 25)
-        main_layout.setSpacing(20)
+    def _setup_styles(self):
+        self.setStyleSheet("""
+            QWidget#LayananPage {
+                background-color: white;
+            }
+            QLabel {
+                font-family: 'Segoe UI', sans-serif;
+                color: #2D3142;
+                border: none;
+            }
+            /* Card Style khusus ID ServiceCard */
+            QFrame#ServiceCard {
+                background-color: #F8FAFC;
+                border: 1px solid #E2E8F0;
+                border-radius: 16px;
+            }
+            QFrame#ServiceCard:hover {
+                border: 1px solid #FF9966; /* Highlight orange saat hover */
+                background-color: #FFFBF8;
+            }
+            QPushButton {
+                background-color: #FF9966;
+                color: white;
+                border-radius: 10px;
+                padding: 8px 12px;
+                font-weight: bold;
+                font-size: 14px;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #FF8C4D;
+            }
+        """)
 
-        # =====================================
-        # TITLE
-        # =====================================
-        title = QLabel("Pemesan Layanan")
-        title.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
+    def _setup_ui(self):
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(40, 40, 40, 40)
+        main_layout.setSpacing(30)
 
+        # Title
+        title = QLabel("Pesan Layanan")
+        title.setFont(QFont("Segoe UI", 24, QFont.Weight.Bold))
         main_layout.addWidget(title)
-        main_layout.addSpacing(10)
 
-        # =====================================
-        # GRID OF CARDS (Layanan)
-        # =====================================
+        # Grid of Services
         grid = QGridLayout()
         grid.setSpacing(30)
 
         layanan_list = [
-            "Laundry",
-            "Catering",
-            "Refill Galon",
-            "Belanja Kebutuhan",
+            ("Laundry", "👕"),
+            ("Catering", "🍱"),
+            ("Refill Galon", "💧"),
+            ("Belanja Kebutuhan", "🛒"),
         ]
 
-        row = 0
-        col = 0
-
-        for layanan in layanan_list:
-            card = self.create_layanan_card(layanan)
+        row, col = 0, 0
+        for nama, icon in layanan_list:
+            card = self.create_layanan_card(nama, icon)
             grid.addWidget(card, row, col)
-
+            
             col += 1
-            if col > 2:  # max 3 per row
+            if col > 2: # Max 3 kolom
                 col = 0
                 row += 1
 
         main_layout.addLayout(grid)
         main_layout.addStretch()
 
-        self.setLayout(main_layout)
-
-    # =====================================
-    # CARD: LAYANAN INDIVIDUAL
-    # =====================================
-    def create_layanan_card(self, layanan_name):
+    def create_layanan_card(self, layanan_name, icon_char):
         card = QFrame()
-        card.setFixedSize(260, 220)
-
-        card.setStyleSheet("""
-            QFrame {
-                background: #F8F4DE;
-                border-radius: 16px;
-                border: 1px solid #E0DBBF;
-            }
-            QLabel {
-                font-size: 22px;
-            }
-        """)
+        card.setObjectName("ServiceCard")
+        card.setFixedSize(280, 200)
+        
+        # Shadow Effect
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(20); shadow.setXOffset(0); shadow.setYOffset(4)
+        shadow.setColor(QColor(0, 0, 0, 10))
+        card.setGraphicsEffect(shadow)
 
         layout = QVBoxLayout(card)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(25)
+        layout.setContentsMargins(25, 25, 25, 25)
+        layout.setSpacing(15)
 
-        # Nama layanan
-        lbl = QLabel(layanan_name)
-        lbl.setFont(QFont("Segoe UI", 22, QFont.Weight.Bold))
-        lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # Icon Besar
+        lbl_icon = QLabel(icon_char)
+        lbl_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl_icon.setStyleSheet("font-size: 48px; border: none; background: transparent;")
+        
+        # Nama Layanan
+        lbl_name = QLabel(layanan_name)
+        lbl_name.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        lbl_name.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl_name.setStyleSheet("border: none; background: transparent;")
 
-        # Tombol pesan
-        btn = QPushButton("Pesan")
-        btn.setFixedWidth(90)
-        btn.setStyleSheet("""
-            QPushButton {
-                background: #E99670;
-                color: white;
-                border-radius: 10px;
-                padding: 8px 12px;
-                font-size: 14px;
-            }
-            QPushButton:hover {
-                background: #F7A784;
-            }
-        """)
+        # Tombol Pesan
+        btn = QPushButton("Pesan Sekarang")
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        
+        # Routing logic
         if layanan_name == "Catering":
             btn.clicked.connect(self.show_catering_popup)
         elif layanan_name == "Laundry":
@@ -106,49 +142,32 @@ class PenghuniLayananPage(QWidget):
         else:
             btn.clicked.connect(lambda: self.pesan_layanan(layanan_name))
 
-
-        btn_row = QHBoxLayout()
-        btn_row.addStretch()
-        btn_row.addWidget(btn)
-        btn_row.addStretch()
-
-        layout.addWidget(lbl)
-        layout.addLayout(btn_row)
+        layout.addWidget(lbl_icon)
+        layout.addWidget(lbl_name)
+        layout.addWidget(btn)
 
         return card
 
-    # =====================================
-    # FUNGSI PESAN
-    # =====================================
-    def pesan_layanan(self, layanan):
-        QMessageBox.information(
-            self,
-            "Layanan Dipesan",
-            f"Layanan '{layanan}' berhasil dipesan!"
-        )
-
-        # TODO: Simpan ke database:
-        # insert_layanan(penghuni_id, layanan)
-    
+    # --- POPUP HANDLERS ---
     def show_laundry_popup(self):
-        from GUI.components.penghuni.layanan_laundry import LaundryInputDialog
-        dlg = LaundryInputDialog()
-        dlg.exec()
+        if LaundryInputDialog:
+            dlg = LaundryInputDialog()
+            dlg.exec()
 
     def show_catering_popup(self):
-        from GUI.components.penghuni.layanan_catering import CateringInputDialog
-        dlg = CateringInputDialog()
-        dlg.exec()
+        if CateringInputDialog:
+            dlg = CateringInputDialog()
+            dlg.exec()
 
     def show_refill_popup(self):
-        from GUI.components.penghuni.layanan_refill import RefillGalonDialog
-        dlg = RefillGalonDialog()
-        dlg.exec()
+        if RefillGalonDialog:
+            dlg = RefillGalonDialog()
+            dlg.exec()
 
     def show_belanja_popup(self):
-        from GUI.components.penghuni.layanan_belanja import BelanjaInputDialog
-        dialog = BelanjaInputDialog()
-        dialog.exec()
+        if BelanjaInputDialog:
+            dlg = BelanjaInputDialog()
+            dlg.exec()
 
-    
-
+    def pesan_layanan(self, layanan):
+        QMessageBox.information(self, "Info", f"Layanan {layanan} belum tersedia.")

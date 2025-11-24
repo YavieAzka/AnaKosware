@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QDialog, QLabel, QVBoxLayout, QHBoxLayout, QPushButton,
-    QTableWidget, QTableWidgetItem, QLineEdit, QMessageBox
+    QTableWidget, QTableWidgetItem, QLineEdit, QMessageBox, QHeaderView
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
@@ -8,171 +8,68 @@ from PyQt6.QtGui import QFont
 class BelanjaInputDialog(QDialog):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Layanan Belanja Kebutuhan")
-        self.setMinimumWidth(500)
+        self.setWindowTitle("Jastip Belanja")
+        self.setFixedSize(500, 500)
         self.setStyleSheet("""
-            QDialog {
-                background-color: white;
-                border-radius: 20px;
-            }
-            QLabel {
-                font-size: 16px;
-            }
-            QPushButton {
-                background-color: #FF8E72;
-                padding: 8px 15px;
-                border-radius: 10px;
-                color: white;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #ffa98e;
-            }
+            QDialog { background: white; }
+            QLabel { font-family: 'Segoe UI'; color: #2D3142; border: none; }
             QLineEdit {
-                border: 1px solid #c9c9c9;
-                border-radius: 8px;
-                padding: 6px;
+                border: 1px solid #CBD5E0; border-radius: 8px; padding: 10px; font-size: 14px;
             }
+            QTableWidget {
+                background-color: white; border: 1px solid #E2E8F0; gridline-color: #F0F0F0;
+            }
+            QPushButton#ActionBtn {
+                background-color: #FF9966; color: white; border-radius: 10px; 
+                padding: 10px; font-weight: bold; border: none;
+            }
+            QPushButton#ActionBtn:hover { background-color: #FF8C4D; }
         """)
 
-        layout = QVBoxLayout()
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(15)
 
-        title = QLabel("Layanan Belanja Kebutuhan")
-        title.setFont(QFont("Arial", 20, QFont.Weight.Bold))
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(title)
+        lbl = QLabel("🛒 Titip Belanja Kebutuhan")
+        lbl.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
+        lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(lbl)
 
-        # =======================
-        # TABEL DAFTAR BARANG
-        # =======================
+        # Table Referensi Harga
         self.table = QTableWidget()
-        self.table.setRowCount(5)
         self.table.setColumnCount(2)
-        self.table.setHorizontalHeaderLabels(["Nama Barang", "Harga"])
-        self.table.setColumnWidth(0, 230)
-        self.table.setColumnWidth(1, 150)
-
-        barang_list = [
-            ("Sabun Batang", "Rp5.000"),
-            ("Shampoo", "Rp17.000"),
-            ("Tomat", "Rp1.000"),
-            ("Telur", "Rp2.000"),
-            ("Sikat gigi", "Rp5.000"),
-        ]
-
-        for i, (nama, harga) in enumerate(barang_list):
-            self.table.setItem(i, 0, QTableWidgetItem(nama))
-            self.table.setItem(i, 1, QTableWidgetItem(harga))
-
+        self.table.setHorizontalHeaderLabels(["Barang Umum", "Estimasi Harga"])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.table.verticalHeader().setVisible(False)
+        
+        items = [("Sabun Mandi", "Rp 5.000"), ("Shampoo Sachet", "Rp 1.000"), ("Mie Instan", "Rp 3.500"), ("Telur (Butir)", "Rp 2.500")]
+        self.table.setRowCount(len(items))
+        for i, (n, p) in enumerate(items):
+            self.table.setItem(i, 0, QTableWidgetItem(n))
+            self.table.setItem(i, 1, QTableWidgetItem(p))
+            
+        layout.addWidget(QLabel("Referensi Harga:"))
         layout.addWidget(self.table)
 
-        # =======================
-        # INPUT USER
-        # =======================
+        # Input Manual
+        layout.addWidget(QLabel("Tulis pesanan (Format: Barang Jumlah Estimasi)"))
         self.input_barang = QLineEdit()
-        self.input_barang.setPlaceholderText(
-            "Tuliskan barang yang ingin dibeli\nContoh:\nSabun 2 5000"
-        )
+        self.input_barang.setPlaceholderText("Contoh: Telur 5 12500")
         layout.addWidget(self.input_barang)
 
-        # =======================
-        # TOMBOL BAYAR
-        # =======================
-        pay_btn = QPushButton("Bayar")
-        pay_btn.clicked.connect(self.open_payment_dialog)
-        layout.addWidget(pay_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout.addStretch()
 
-        self.setLayout(layout)
+        btn = QPushButton("Ajukan Request")
+        btn.setObjectName("ActionBtn")
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn.clicked.connect(self.submit)
+        layout.addWidget(btn)
 
-    # =========================
-    # POP UP PEMBAYARAN
-    # =========================
-    def open_payment_dialog(self):
+    def submit(self):
         text = self.input_barang.text().strip()
-
-        if text == "":
-            QMessageBox.warning(self, "Peringatan", "Input tidak boleh kosong!")
+        if not text:
+            QMessageBox.warning(self, "Error", "Pesanan tidak boleh kosong.")
             return
-
-        # Format input: "Sabun 2 5000"
-        try:
-            nama, jumlah, harga = text.split()
-            jumlah = int(jumlah)
-            harga = int(harga)
-        except:
-            QMessageBox.warning(self, "Format Salah",
-                                "Gunakan format: NamaBarang Jumlah HargaSatuan\nContoh: Sabun 2 5000")
-            return
-
-        total = jumlah * harga
-
-        dialog = PembayaranBelanjaDialog(nama, jumlah, harga, total)
-        dialog.exec()
-
-
-class PembayaranBelanjaDialog(QDialog):
-    def __init__(self, nama, qty, harga, total):
-        super().__init__()
-        self.setWindowTitle("Rincian Pembayaran")
-        self.setMinimumWidth(450)
-        self.setStyleSheet("""
-            QDialog {
-                background-color: white;
-                border-radius: 20px;
-            }
-            QLabel {
-                font-size: 15px;
-            }
-            QPushButton {
-                background-color: #FF8E72;
-                padding: 8px 15px;
-                border-radius: 10px;
-                color: white;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #ffa98e;
-            }
-        """)
-
-        layout = QVBoxLayout()
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-
-        title = QLabel("Rincian Pembayaran")
-        title.setFont(QFont("Arial", 18, QFont.Weight.Bold))
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(title)
-
-        # ==========================
-        # TABEL RINCIAN PESANAN
-        # ==========================
-        table = QTableWidget()
-        table.setRowCount(1)
-        table.setColumnCount(3)
-        table.setHorizontalHeaderLabels(["Pesanan", "Jumlah", "Harga"])
-        table.setColumnWidth(0, 180)
-        table.setColumnWidth(1, 80)
-        table.setColumnWidth(2, 120)
-
-        table.setItem(0, 0, QTableWidgetItem(nama))
-        table.setItem(0, 1, QTableWidgetItem(str(qty)))
-        table.setItem(0, 2, QTableWidgetItem(f"Rp{harga:,}".replace(",", ".")))
-
-        layout.addWidget(table)
-
-        # ==========================
-        # TOTAL HARGA
-        # ==========================
-        total_label = QLabel(f"Total: Rp{total:,}".replace(",", "."))
-        total_label.setFont(QFont("Arial", 16, QFont.Weight.Bold))
-        total_label.setAlignment(Qt.AlignmentFlag.AlignRight)
-        layout.addWidget(total_label)
-
-        # ==========================
-        # TOMBOL KONFIRMASI
-        # ==========================
-        pay_btn = QPushButton("Konfirmasi Pembayaran")
-        layout.addWidget(pay_btn, alignment=Qt.AlignmentFlag.AlignCenter)
-
-        self.setLayout(layout)
+        
+        QMessageBox.information(self, "Sukses", "Request belanja dikirim ke penjaga!\nTotal biaya akan dikonfirmasi nanti.")
+        self.close()

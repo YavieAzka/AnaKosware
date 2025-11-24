@@ -1,226 +1,132 @@
 from PyQt6.QtWidgets import (
     QDialog, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, 
-    QFileDialog, QLineEdit, QFrame, QMessageBox
+    QFileDialog, QLineEdit, QFrame, QMessageBox, QGraphicsDropShadowEffect
 )
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFont, QColor, QCursor
 from PyQt6.QtCore import Qt
 
-
-# -------------------------------------------------------
-# POPUP 1 — Input Berat
-# -------------------------------------------------------
-class LaundryInputDialog(QDialog):
-    def __init__(self):
+class BaseDialog(QDialog):
+    """Helper class untuk style dialog konsisten"""
+    def __init__(self, title, width=480, height=400):
         super().__init__()
-        self.setWindowTitle("Layanan Laundry")
+        self.setWindowTitle(title)
+        self.setFixedSize(width, height)
         self.setModal(True)
-        self.setFixedSize(480, 380)
-
-        frame = QFrame()
-        frame.setStyleSheet("""
-            QFrame {
-                background: white;
-                border-radius: 20px;
-                border: 1px solid #DDDDDD;
+        self.setStyleSheet("""
+            QDialog { background-color: white; }
+            QLabel { font-family: 'Segoe UI'; color: #2D3142; border: none; }
+            QLineEdit { 
+                border: 1px solid #CBD5E0; border-radius: 8px; padding: 8px; font-size: 14px; 
+            }
+            QPushButton#ActionBtn {
+                background-color: #FF9966; color: white; border-radius: 10px; 
+                padding: 10px; font-weight: bold; border: none;
+            }
+            QPushButton#ActionBtn:hover { background-color: #FF8C4D; }
+            QFrame#Card {
+                background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px;
             }
         """)
 
-        layout = QVBoxLayout(frame)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(15)
+class LaundryInputDialog(BaseDialog):
+    def __init__(self):
+        super().__init__("Layanan Laundry", 450, 350)
+        
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(20)
 
-        # CLOSE
-        btn_close = QPushButton("✕")
-        btn_close.setFixedSize(30, 30)
-        btn_close.setStyleSheet("background:transparent; border:none; font-size:18px;")
-        btn_close.clicked.connect(self.close)
-        top = QHBoxLayout()
-        top.addStretch()
-        top.addWidget(btn_close)
-        layout.addLayout(top)
+        # Title
+        lbl_title = QLabel("⚖️ Input Berat Cucian")
+        lbl_title.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
+        lbl_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(lbl_title)
 
-        # TITLE
-        title = QLabel("Layanan Laundry")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
-        layout.addWidget(title)
+        # Desc
+        lbl_desc = QLabel("Silakan timbang cucian Anda di ruang tamu.")
+        lbl_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl_desc.setStyleSheet("color: #666;")
+        layout.addWidget(lbl_desc)
 
-        # DESC
-        desc = QLabel(
-            "Silakan timbang cucian terlebih dahulu\n"
-            "menggunakan timbangan di ruang tamu kos"
-        )
-        desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        desc.setFont(QFont("Segoe UI", 13))
-        layout.addWidget(desc)
+        # Info Harga
+        card = QFrame(); card.setObjectName("Card")
+        c_layout = QHBoxLayout(card); c_layout.setContentsMargins(20,15,20,15)
+        c_layout.addWidget(QLabel("Harga per Kg:"))
+        c_layout.addStretch()
+        lbl_price = QLabel("Rp 5.000"); lbl_price.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        c_layout.addWidget(lbl_price)
+        layout.addWidget(card)
 
-        # HARGA
-        row_harga = QHBoxLayout()
-        row_harga.addWidget(QLabel("Harga :"))
-        row_harga.addWidget(QLabel("Rp5.000/kg"))
-        row_harga.addStretch()
-        layout.addLayout(row_harga)
-
-        # INPUT BERAT
-        row_berat = QHBoxLayout()
-        row_berat.addWidget(QLabel("Total Berat :"))
-
+        # Input Row
+        row = QHBoxLayout()
+        row.addWidget(QLabel("Total Berat (Kg):"))
         self.input_berat = QLineEdit()
-        self.input_berat.setFixedWidth(80)
+        self.input_berat.setPlaceholderText("0")
         self.input_berat.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.input_berat.setStyleSheet("border:1px solid #CCC; border-radius:8px; padding:4px;")
-        row_berat.addWidget(self.input_berat)
-        row_berat.addWidget(QLabel("Kg"))
-
-        row_berat.addStretch()
-        layout.addLayout(row_berat)
+        self.input_berat.setFixedWidth(100)
+        row.addWidget(self.input_berat)
+        layout.addLayout(row)
 
         layout.addStretch()
 
-        # BUTTON BAYAR
-        btn = QPushButton("Bayar")
-        btn.setStyleSheet("background:#E99670; color:white; padding:10px 25px; border-radius:12px;")
+        # Button
+        btn = QPushButton("Lanjut Pembayaran")
+        btn.setObjectName("ActionBtn")
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
         btn.clicked.connect(self.go_to_payment)
-
-        bx = QHBoxLayout()
-        bx.addStretch()
-        bx.addWidget(btn)
-        bx.addStretch()
-        layout.addLayout(bx)
-
-        container = QVBoxLayout(self)
-        container.addStretch()
-        container.addWidget(frame)
-        container.addStretch()
-
-        self.setStyleSheet("QDialog { background:rgba(0,0,0,90); }")
+        layout.addWidget(btn)
 
     def go_to_payment(self):
-        val = self.input_berat.text()
-        if not val.isdigit():
-            QMessageBox.warning(self, "Input Salah", "Masukkan berat dalam angka.")
+        val = self.input_berat.text().strip()
+        if not val.isdigit() or int(val) <= 0:
+            QMessageBox.warning(self, "Input Salah", "Masukkan berat yang valid (angka > 0).")
             return
-
-        berat = int(val)
         self.close()
-
-        dlg = LaundryPaymentDialog(berat)
+        dlg = LaundryPaymentDialog(int(val))
         dlg.exec()
 
-
-# -------------------------------------------------------
-# POPUP 2 — Pembayaran + Upload Bukti
-# -------------------------------------------------------
-class LaundryPaymentDialog(QDialog):
+class LaundryPaymentDialog(BaseDialog):
     def __init__(self, berat):
-        super().__init__()
-        self.berat = berat
-        self.harga = 5000
-        self.total = berat * self.harga
+        super().__init__("Pembayaran Laundry", 450, 450)
+        self.total = berat * 5000
+        
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(15)
 
-        self.setWindowTitle("Pembayaran Laundry")
-        self.setFixedSize(520, 440)
-        self.setModal(True)
+        lbl_title = QLabel("Rincian Pembayaran")
+        lbl_title.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
+        lbl_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(lbl_title)
 
-        card = QFrame()
-        card.setStyleSheet("""
-            QFrame {
-                background: white;
-                border-radius: 22px;
-                border: 1px solid #DDDDDD;
-            }
-        """)
+        # Rincian
+        card = QFrame(); card.setObjectName("Card")
+        c_layout = QVBoxLayout(card)
+        
+        row1 = QHBoxLayout()
+        row1.addWidget(QLabel(f"Laundry ({berat} Kg)"))
+        row1.addStretch()
+        row1.addWidget(QLabel(f"Rp {self.total:,}"))
+        c_layout.addLayout(row1)
+        
+        layout.addWidget(card)
 
-        layout = QVBoxLayout(card)
-        layout.setContentsMargins(30, 25, 30, 25)
+        # Rekening Info
+        lbl_rek = QLabel("Transfer ke:\nBCA 790568301 / GOPAY 085235990976")
+        lbl_rek.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl_rek.setStyleSheet("color: #555; font-weight: bold; margin: 10px 0;")
+        layout.addWidget(lbl_rek)
 
-        # CLOSE
-        btn_close = QPushButton("✕")
-        btn_close.setFixedSize(30, 30)
-        btn_close.setStyleSheet("background:transparent; border:none; font-size:18px;")
-        btn_close.clicked.connect(self.close)
+        layout.addStretch()
 
-        top = QHBoxLayout()
-        top.addStretch()
-        top.addWidget(btn_close)
-        layout.addLayout(top)
-
-        # TITLE
-        title = QLabel("Layanan Laundry")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
-        layout.addWidget(title)
-
-        # PAYMENT INFO
-        info = QLabel(
-            "Silakan bayar melalui rekening berikut\n\n"
-            "BCA   : 790568301\n"
-            "GOPAY : 085235990976"
-        )
-        info.setFont(QFont("Segoe UI", 13))
-        layout.addWidget(info)
-
-        # RINCIAN
-        rincian = QFrame()
-        rincian.setStyleSheet("""
-            QFrame {
-                background: #F8F4DE;
-                border-radius: 10px;
-                border: 1px solid #CFCFCF;
-            }
-            QLabel { font-size: 14px; }
-        """)
-        rin_lay = QVBoxLayout(rincian)
-        rin_lay.setContentsMargins(20, 14, 20, 14)
-
-        r1 = QHBoxLayout()
-        r1.addWidget(QLabel("Laundry"))
-        r1.addStretch()
-        r1.addWidget(QLabel(f"{self.berat} kg"))
-        rin_lay.addLayout(r1)
-
-        r2 = QHBoxLayout()
-        r2.addWidget(QLabel("Total Harga"))
-        r2.addStretch()
-        r2.addWidget(QLabel(f"Rp{self.total:,}"))
-        rin_lay.addLayout(r2)
-
-        layout.addWidget(rincian)
-
-        # UPLOAD BUTTON
-        btn_upload = QPushButton("Unggah Bukti Bayar")
-        btn_upload.setStyleSheet("""
-            QPushButton {
-                background:#E99670; color:white;
-                padding:10px 25px; border-radius:12px;
-            }
-            QPushButton:hover { background:#F1A882; }
-        """)
-        btn_upload.clicked.connect(self.upload_bukti)
-
-        bx = QHBoxLayout()
-        bx.addStretch()
-        bx.addWidget(btn_upload)
-        bx.addStretch()
-        layout.addLayout(bx)
-
-        # BACKGROUND
-        container = QVBoxLayout(self)
-        container.addStretch()
-        container.addWidget(card)
-        container.addStretch()
-
-        self.setStyleSheet("QDialog { background:rgba(0,0,0,90); }")
+        btn = QPushButton("Unggah Bukti Bayar")
+        btn.setObjectName("ActionBtn")
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn.clicked.connect(self.upload_bukti)
+        layout.addWidget(btn)
 
     def upload_bukti(self):
-        file, _ = QFileDialog.getOpenFileName(
-            self, "Unggah Bukti Pembayaran", "", "Images (*.png *.jpg *.jpeg)"
-        )
-
+        file, _ = QFileDialog.getOpenFileName(self, "Pilih Bukti", "", "Images (*.png *.jpg *.jpeg)")
         if file:
-            QMessageBox.information(self, "Sukses", "Bukti pembayaran berhasil diupload!")
-
-            # TODO: SIMPAN DATABASE
-            # save_service_payment("Laundry", self.berat, self.total, file)
-
+            QMessageBox.information(self, "Sukses", "Pesanan Laundry berhasil dibuat!")
             self.close()
