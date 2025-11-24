@@ -1,143 +1,141 @@
-from PyQt6.QtWidgets import (
-    QWidget, QFrame, QLabel, QVBoxLayout, QHBoxLayout, QSizePolicy
-)
-from PyQt6.QtGui import QPixmap, QFont, QCursor
-from PyQt6.QtCore import Qt, QSize
+"""
+Sidebar component for Penghuni - PyQt6 Version
+Refactored: Uses QPushButton for robust state management (Hover/Checked).
+"""
 import os
+from PyQt6.QtWidgets import (
+    QWidget, QVBoxLayout, QPushButton, QLabel, QFrame, QSizePolicy
+)
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QPixmap, QFont, QCursor
 
-
-class Sidebar(QFrame):
+class Sidebar(QWidget):
     """Reusable sidebar navigation for role Penghuni"""
-
-    def __init__(self, parent=None, on_menu_click=None, active_menu="homepage"):
+    
+    def __init__(self, parent=None, on_menu_click=None, active_menu='homepage'):
         super().__init__(parent)
-
-        self.setStyleSheet("background-color: #EFE5B7;")
-        self.setFixedWidth(250)
-
         self.on_menu_click = on_menu_click
         self.active_menu = active_menu
+        
+        # Setup Widget
+        self.setFixedWidth(260)
+        self.setObjectName("SidebarContainer")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        
+        # Layout
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(20, 40, 20, 40)
+        self.main_layout.setSpacing(10)
 
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-
+        self._setup_style()
+        
+        # Components
         self.create_logo()
+        self.main_layout.addSpacing(20)
         self.create_navigation()
-        self.layout.addStretch()   # push logout to bottom
+        self.main_layout.addStretch()
         self.create_logout()
 
-    # ---------------- LOGO ---------------- #
+    def _setup_style(self):
+        self.setStyleSheet("""
+            QWidget#SidebarContainer {
+                background-color: #EFE5B7; /* Warna Dasar Krem */
+            }
+            /* Button Style */
+            QPushButton {
+                text-align: left;
+                padding: 12px 20px;
+                border: none;
+                border-radius: 12px;
+                font-family: 'Segoe UI', sans-serif;
+                font-size: 14px;
+                color: #2D3142; /* Teks Selalu Gelap */
+                background-color: transparent;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.4);
+            }
+            /* Active State */
+            QPushButton[checked="true"] {
+                background-color: #FFFFFF;
+                color: #000000;
+                font-weight: bold;
+                border-left: 4px solid #2D3142;
+            }
+        """)
+
     def create_logo(self):
-        logo_layout = QVBoxLayout()
-        logo_layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-
-        logo_label = QLabel()
+        logo_container = QLabel()
+        logo_container.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
         logo_path = os.path.join("assets", "image", "AnaKosware Logo.png")
-
+        
         if os.path.exists(logo_path):
-            pix = QPixmap(logo_path)
-            pix = pix.scaled(QSize(180, 180), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-            logo_label.setPixmap(pix)
+            pixmap = QPixmap(logo_path)
+            scaled_pixmap = pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            logo_container.setPixmap(scaled_pixmap)
+        else:
+            logo_container.setText("AnaKosware")
+            logo_container.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
+            logo_container.setStyleSheet("color: #2D3142;")
+            
+        self.main_layout.addWidget(logo_container)
 
-        logo_label.setStyleSheet("padding: 25px; background-color: #EFE5B7;")
-
-        logo_layout.addWidget(logo_label)
-        self.layout.addLayout(logo_layout)
-
-    # ---------------- MENU SECTION ---------------- #
     def create_navigation(self):
         menu_items = [
             ("🏠", "Homepage", "homepage"),
             ("🛒", "Layanan", "layanan"),
             ("👍", "Berikan Feedback", "berikan_feedback"),
         ]
-
+        
+        self.buttons = {}
+        
         for icon, text, menu_id in menu_items:
-            self.create_menu_item(icon, text, menu_id)
+            btn = QPushButton(f"  {icon}   {text}")
+            btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+            btn.setCheckable(True)
+            
+            if menu_id == self.active_menu:
+                btn.setChecked(True)
+            
+            # Gunakan lambda dengan checked=False untuk handle click
+            btn.clicked.connect(lambda checked, mid=menu_id: self.handle_click(mid))
+            
+            self.main_layout.addWidget(btn)
+            self.buttons[menu_id] = btn
 
-    def create_menu_item(self, icon, text, menu_id):
-        is_active = (menu_id == self.active_menu)
-
-        item = QFrame()
-        item.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-
-        bg_color = "white" if is_active else "#EFE5B7"
-
-        item.setStyleSheet(f"""
-            QFrame {{
-                background-color: {bg_color};
-                border-radius: 6px;
-            }}
-            QLabel {{
-                color: #2D3142;
-            }}
-        """)
-
-        layout = QHBoxLayout(item)
-        layout.setContentsMargins(15, 10, 15, 10)
-
-        icon_label = QLabel(icon)
-        icon_label.setFont(QFont("Arial", 16))
-        layout.addWidget(icon_label)
-
-        text_label = QLabel(text)
-        text_label.setFont(QFont("Arial", 10, QFont.Weight.Bold if is_active else QFont.Weight.Normal))
-        layout.addWidget(text_label)
-
-        layout.addStretch()
-        self.layout.addWidget(item)
-
-        # ----- CLICK HANDLER -----
-        if self.on_menu_click:
-            def handler(_):
-                self.on_menu_click(menu_id)
-            item.mousePressEvent = handler  # override click event
-
-        # ----- HOVER EFFECT -----
-        if not is_active:
-            def enter(_):
-                item.setStyleSheet("""
-                    QFrame { background-color: #DCC9A0; border-radius:6px; }
-                    QLabel { color: #2D3142; }
-                """)
-            def leave(_):
-                item.setStyleSheet("""
-                    QFrame { background-color: #EFE5B7; border-radius:6px; }
-                    QLabel { color: #2D3142; }
-                """)
-            item.enterEvent = enter
-            item.leaveEvent = leave
-
-    # ---------------- LOGOUT ---------------- #
     def create_logout(self):
-        container = QFrame()
-        layout = QHBoxLayout(container)
-        layout.setContentsMargins(15, 15, 15, 15)
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setStyleSheet("background-color: #DCC9A0; max-height: 1px;")
+        self.main_layout.addWidget(line)
+        self.main_layout.addSpacing(10)
 
-        icon_label = QLabel("🚪")
-        icon_label.setFont(QFont("Arial", 16))
-        layout.addWidget(icon_label)
+        logout_btn = QPushButton("  🚪   Logout")
+        logout_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        logout_btn.clicked.connect(lambda: self.handle_click('logout'))
+        
+        # Style khusus logout (hover merah)
+        logout_btn.setStyleSheet("""
+            QPushButton {
+                text-align: left; padding: 12px 20px; border-radius: 12px;
+                font-family: 'Segoe UI'; font-size: 14px; color: #2D3142; background: transparent;
+            }
+            QPushButton:hover { background-color: #FFEBEE; color: #D32F2F; }
+        """)
+        self.main_layout.addWidget(logout_btn)
 
-        text_label = QLabel("Logout")
-        text_label.setFont(QFont("Arial", 10))
-        layout.addWidget(text_label)
-        layout.addStretch()
+    def handle_click(self, menu_id):
+        if menu_id == 'logout':
+            if self.on_menu_click: self.on_menu_click(menu_id)
+            return
 
-        container.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        container.setStyleSheet("background-color: #EFE5B7;")
-
-        self.layout.addWidget(container)
-
+        # Visual update
+        for btn in self.buttons.values():
+            btn.setChecked(False)
+        
+        if menu_id in self.buttons:
+            self.buttons[menu_id].setChecked(True)
+            
         if self.on_menu_click:
-            def logout_click(_):
-                self.on_menu_click("logout")
-            container.mousePressEvent = logout_click
-
-        # Hover logout
-        def enter(_):
-            container.setStyleSheet("background-color: #DCC9A0;")
-        def leave(_):
-            container.setStyleSheet("background-color: #EFE5B7;")
-
-        container.enterEvent = enter
-        container.leaveEvent = leave
+            self.on_menu_click(menu_id)

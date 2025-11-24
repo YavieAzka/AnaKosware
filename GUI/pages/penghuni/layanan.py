@@ -102,7 +102,7 @@ class PenghuniLayananPage(QWidget):
         elif layanan_name == "Refill Galon":
             btn.clicked.connect(self.show_refill_popup)
         elif layanan_name == "Belanja Kebutuhan":
-            belanja_btn.clicked.connect(self.show_belanja_popup)
+            btn.clicked.connect(self.show_belanja_popup)
         else:
             btn.clicked.connect(lambda: self.pesan_layanan(layanan_name))
 
@@ -131,23 +131,24 @@ class PenghuniLayananPage(QWidget):
         # insert_layanan(penghuni_id, layanan)
     
     def show_laundry_popup(self):
-    dlg = LaundryInputDialog()
-    dlg.exec()
+        from GUI.components.penghuni.layanan_laundry import LaundryInputDialog
+        dlg = LaundryInputDialog()
+        dlg.exec()
 
     def show_catering_popup(self):
-    from components.layanan_catering import CateringInputDialog
-    dlg = CateringInputDialog()
-    dlg.exec()
+        from GUI.components.penghuni.layanan_catering import CateringInputDialog
+        dlg = CateringInputDialog()
+        dlg.exec()
 
     def show_refill_popup(self):
-    from components.layanan_refill_galon import RefillGalonDialog
-    dlg = RefillGalonDialog()
-    dlg.exec()
+        from GUI.components.penghuni.layanan_refill import RefillGalonDialog
+        dlg = RefillGalonDialog()
+        dlg.exec()
 
     def show_belanja_popup(self):
-    from components.layanan_belanja import BelanjaInputDialog
-    dialog = BelanjaInputDialog()
-    dialog.exec()
+        from GUI.components.penghuni.layanan_belanja import BelanjaInputDialog
+        dialog = BelanjaInputDialog()
+        dialog.exec()
 
     
 

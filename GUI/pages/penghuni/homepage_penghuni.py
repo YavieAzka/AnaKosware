@@ -1,363 +1,480 @@
+"""
+Homepage Penghuni - Modern PyQt6 Version
+Fixes: 
+1. Force Dark Text (Fix Invisible Text on Dark Mode OS)
+2. Remove unwanted borders from Labels (Fix Boxy UI)
+"""
+import sys
 from PyQt6.QtWidgets import (
-    QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFrame,
-    QFileDialog, QMessageBox
+    QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, 
+    QFrame, QFileDialog, QMessageBox, QDialog, QGraphicsDropShadowEffect
 )
-from PyQt6.QtGui import QFont, QPixmap, QColor, QIcon
+from PyQt6.QtGui import QFont, QColor, QCursor
 from PyQt6.QtCore import Qt
-import os
 
-# Pop up kalau mau membayar
+# --- POPUP PEMBAYARAN ---
 class PembayaranDialog(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Pembayaran Kos")
         self.setModal(True)
-        self.setFixedSize(480, 380)
-
-        # styling frame (agar tampak seperti card pop-up)
-        frame = QFrame()
-        frame.setStyleSheet("""
-            QFrame {
-                background: white;
-                border-radius: 20px;
-                border: 1px solid #DDDDDD;
-            }
-        """)
-
-        frame_layout = QVBoxLayout(frame)
-        frame_layout.setContentsMargins(30, 25, 30, 25)
-        frame_layout.setSpacing(18)
-
-        # =====================
-        # CLOSE BUTTON (X)
-        # =====================
-        close_btn = QPushButton("✕")
-        close_btn.setFixedSize(30, 30)
-        close_btn.setStyleSheet("""
-            QPushButton {
-                border: none;
-                font-size: 18px;
-                background-color: transparent;
-            }
-            QPushButton:hover {
-                color: #B00000;
-            }
-        """)
-        close_btn.clicked.connect(self.close)
-
-        top_row = QHBoxLayout()
-        top_row.addStretch()
-        top_row.addWidget(close_btn)
-        frame_layout.addLayout(top_row)
-
-        # =====================
-        # TITLE
-        # =====================
-        title = QLabel("Pembayaran Kos")
-        title.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        frame_layout.addWidget(title)
-        frame_layout.addSpacing(10)
-
-        # =====================
-        # TEXT REKENING
-        # =====================
-        info = QLabel(
-            "Silakan transfer melalui rekening berikut\n\n"
-            "BCA        : 740411403\n"
-            "BNI        : 159837200\n"
-            "MANDIRI : 209388782984"
-        )
-        info.setFont(QFont("Segoe UI", 13))
-        info.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        info.setStyleSheet("line-height: 1.4;")
-
-        frame_layout.addWidget(info)
-
-        frame_layout.addStretch()
-
-        # =====================
-        # UPLOAD BUTTON
-        # =====================
-        upload_btn = QPushButton("Unggah Bukti Bayar")
-        upload_btn.setStyleSheet("""
-            QPushButton {
-                background: #E99670;
-                padding: 10px 18px;
-                border-radius: 12px;
-                color: white;
-                font-size: 14px;
-            }
-            QPushButton:hover {
-                background: #F1A882;
-            }
-        """)
-        upload_btn.clicked.connect(self.upload_bukti)
-
-        bottom_row = QHBoxLayout()
-        bottom_row.addStretch()
-        bottom_row.addWidget(upload_btn)
-        bottom_row.addStretch()
-
-        frame_layout.addLayout(bottom_row)
-
-        # =====================
-        # MAIN LAYOUT
-        # =====================
-        main_layout = QVBoxLayout(self)
-        main_layout.addStretch()
-        main_layout.addWidget(frame)
-        main_layout.addStretch()
-
-        # semi-transparent backdrop effect
+        self.setFixedSize(500, 450)
+        
+        # Style Dialog yang diperbaiki
         self.setStyleSheet("""
-            QDialog {
-                background-color: rgba(0, 0, 0, 90);
+            QDialog { background-color: white; }
+            
+            /* Reset Label Style */
+            QLabel { 
+                font-family: 'Segoe UI', sans-serif; 
+                color: #2D3142; 
+                border: none; 
             }
+            
+            QFrame#BankCard {
+                background-color: #F8FAFC;
+                border: 1px solid #E2E8F0;
+                border-radius: 15px;
+            }
+            QPushButton#UploadBtn {
+                background-color: #FF9966; color: white; font-weight: bold;
+                border-radius: 20px; padding: 12px; font-size: 14px; border: none;
+            }
+            QPushButton#UploadBtn:hover { background-color: #FF8C4D; }
+            QPushButton#CloseBtn {
+                background: transparent; border: none; font-size: 18px; color: #888;
+            }
+            QPushButton#CloseBtn:hover { color: #DC3545; }
         """)
 
-# Untuk tampilan homepage
-class PenghuniHomepage(QWidget):
-    def __init__(self, penghuni_data):
-        """
-        penghuni_data = {
-            "nama": "Ahmad Husein",
-            "kamar": "A01",
-            "harga": 2000000,
-            "masuk": "10 Januari 2025",
-            "bulan_ke": 7,
-            "pembayaran_lunas": False,
-            "layanan": {
-                "Laundry": "Waiting",
-                "Catering": "Done",
-                "Refill Galon": "OnProgress",
-            }
-        }
-        """
-        super().__init__()
-        self.data = penghuni_data
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(30, 20, 30, 30)
+        layout.setSpacing(20)
 
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(30, 20, 30, 20)
-        main_layout.setSpacing(25)
+        # Header
+        header_layout = QHBoxLayout()
+        title = QLabel("Pembayaran Kos")
+        title.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
+        close_btn = QPushButton("✕")
+        close_btn.setObjectName("CloseBtn")
+        close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        close_btn.clicked.connect(self.close)
+        
+        header_layout.addWidget(title)
+        header_layout.addStretch()
+        header_layout.addWidget(close_btn)
+        layout.addLayout(header_layout)
 
-        # =======================
-        # Judul Halo Penghuni
-        # =======================
-        title = QLabel(f"Halo, {self.data['nama']}…")
-        title.setFont(QFont("Segoe UI", 22, QFont.Weight.Bold))
+        # Instruksi
+        instr = QLabel("Silakan transfer sesuai nominal tagihan ke salah satu rekening di bawah ini:")
+        instr.setWordWrap(True)
+        instr.setStyleSheet("color: #666; font-size: 13px;")
+        layout.addWidget(instr)
 
-        subtitle = QLabel("Selamat datang di Kos Melati")
-        subtitle.setFont(QFont("Segoe UI", 14))
-        subtitle.setStyleSheet("color: gray;")
+        # Bank Info Card
+        bank_frame = QFrame()
+        bank_frame.setObjectName("BankCard")
+        bank_layout = QVBoxLayout(bank_frame)
+        bank_layout.setSpacing(15)
+        bank_layout.setContentsMargins(20, 20, 20, 20)
 
-        main_layout.addWidget(title)
-        main_layout.addWidget(subtitle)
+        self._add_bank_row(bank_layout, "BCA", "740411403", "A.n AnaKosware")
+        self._add_bank_row(bank_layout, "BNI", "159837200", "A.n AnaKosware")
+        self._add_bank_row(bank_layout, "MANDIRI", "209388782984", "A.n AnaKosware")
 
-        # =======================
-        # Row 1: Info Penghuni + Notifikasi Pembayaran
-        # =======================
-        row1 = QHBoxLayout()
-        row1.setSpacing(20)
+        layout.addWidget(bank_frame)
+        layout.addStretch()
 
-        # CARD 1 — Informasi Penghuni
-        card_info = self.make_card_info()
-        row1.addWidget(card_info, 2)
+        # Upload Button
+        self.upload_btn = QPushButton("📤  Unggah Bukti Bayar")
+        self.upload_btn.setObjectName("UploadBtn")
+        self.upload_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.upload_btn.clicked.connect(self.upload_bukti)
+        layout.addWidget(self.upload_btn)
 
-        # CARD 2 — Status Pembayaran
-        card_noti = self.make_card_notifikasi()
-        row1.addWidget(card_noti, 1)
-
-        main_layout.addLayout(row1)
-
-        # =======================
-        # Row 2 — Status Layanan
-        # =======================
-        card_layanan = self.make_card_layanan()
-        main_layout.addWidget(card_layanan)
-
-        self.setLayout(main_layout)
-
-    # =================================================================
-    # CARD INFORMASI PENGHUNI
-    # =================================================================
-    def make_card_info(self):
-        card = QFrame()
-        card.setStyleSheet("""
-            QFrame {
-                background: #F8F4DE;
-                border-radius: 18px;
-                border: 1px solid #E0DBBF;
-            }
-            QLabel {
-                font-size: 15px;
-            }
+    def _add_bank_row(self, layout, bank_name, acc_number, acc_name):
+        row = QHBoxLayout()
+        
+        lbl_bank = QLabel(bank_name)
+        lbl_bank.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+        lbl_bank.setFixedWidth(80)
+        
+        info_layout = QVBoxLayout()
+        info_layout.setSpacing(2)
+        lbl_num = QLabel(acc_number)
+        lbl_num.setFont(QFont("Segoe UI", 13, QFont.Weight.Bold))
+        
+        lbl_name = QLabel(acc_name)
+        lbl_name.setStyleSheet("color: #888; font-size: 11px;")
+        
+        info_layout.addWidget(lbl_num)
+        info_layout.addWidget(lbl_name)
+        
+        btn_copy = QPushButton("Salin")
+        btn_copy.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_copy.setStyleSheet("""
+            color: #4A90E2; border: 1px solid #4A90E2; 
+            border-radius: 5px; padding: 4px 10px; font-size: 11px; background: white;
         """)
-        card.setMinimumWidth(350)
-
-        layout = QVBoxLayout(card)
-        layout.setContentsMargins(25, 20, 25, 20)
-        layout.setSpacing(12)
-
-        # isi data
-        lbl_kamar = QLabel(f"Kamar {self.data['kamar']}")
-        lbl_harga = QLabel(f"Kos perbulan\nRp. {self.data['harga']:,}")
-        lbl_masuk = QLabel(f"Masuk\n{self.data['masuk']}")
-
-        # BULAN KE box
-        bulan_frame = QFrame()
-        bulan_frame.setStyleSheet("""
-            QFrame {
-                background: #F0E3B1;
-                border-radius: 14px;
-                border: 1px solid #D0C38F;
-            }
-            QLabel {
-                font-size: 26px;
-                font-weight: bold;
-            }
-        """)
-        bulan_layout = QHBoxLayout(bulan_frame)
-        bulan_layout.setContentsMargins(16, 10, 16, 10)
-        bulan_label = QLabel(str(self.data["bulan_ke"]))
-        bulan_text = QLabel("BULAN KE")
-        bulan_text.setFont(QFont("Segoe UI", 13))
-        bulan_layout.addWidget(bulan_text)
-        bulan_layout.addWidget(bulan_label)
-
-        layout.addWidget(lbl_kamar)
-        layout.addWidget(lbl_harga)
-        layout.addWidget(lbl_masuk)
-        layout.addWidget(bulan_frame)
-
-        return card
-
-    # =================================================================
-    # CARD NOTIFIKASI PEMBAYARAN
-    # =================================================================
-    def make_card_notifikasi(self):
-        card = QFrame()
-        card.setStyleSheet("""
-            QFrame {
-                background: #F8F4DE;
-                border-radius: 18px;
-                border: 1px solid #E0DBBF;
-            }
-            QLabel {
-                font-size: 15px;
-            }
-        """)
-        layout = QVBoxLayout(card)
-        layout.setContentsMargins(25, 20, 25, 20)
-        layout.setSpacing(15)
-
-        title = QLabel("Notifikasi Tagihan")
-        title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
-        layout.addWidget(title)
-
-        if not self.data["pembayaran_lunas"]:
-            # belum bayar
-            btn = QPushButton("Bayar Sekarang")
-            btn.setStyleSheet("""
-                QPushButton {
-                    background: #E6DDA7;
-                    padding: 10px 20px;
-                    border-radius: 12px;
-                    font-size: 14px;
-                }
-                QPushButton:hover {
-                    background: #F3E9B8;
-                }
-            """)
-            btn.clicked.connect(self.show_pembayaran_dialog)
-            layout.addWidget(btn)
-        else:
-            # sudah bayar
-            btn = QLabel("Pembayaran Lunas")
-            btn.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            btn.setStyleSheet("""
-                QLabel {
-                    background: #E4EBCB;
-                    border-radius: 12px;
-                    padding: 12px;
-                    font-weight: bold;
-                    font-size: 14px;
-                }
-            """)
-            layout.addWidget(btn)
-
-        return card
-
-    # =================================================================
-    # CARD STATUS LAYANAN
-    # =================================================================
-    def make_card_layanan(self):
-        card = QFrame()
-        card.setStyleSheet("""
-            QFrame {
-                background: #F8F4DE;
-                border-radius: 18px;
-                border: 1px solid #E0DBBF;
-            }
-            QLabel {
-                font-size: 15px;
-            }
-        """)
-
-        layout = QVBoxLayout(card)
-        layout.setContentsMargins(25, 20, 25, 20)
-
-        title = QLabel("Status Layanan")
-        title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
-        layout.addWidget(title)
-
-        for layanan, status in self.data["layanan"].items():
-            row = QHBoxLayout()
-            label = QLabel(layanan)
-            label.setMinimumWidth(120)
-
-            badge = QLabel(status)
-            badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            badge.setFixedWidth(90)
-
-            if status == "Waiting":
-                badge.setStyleSheet("background:#E0E0E0; padding:6px; border-radius:10px;")
-            elif status == "Done":
-                badge.setStyleSheet("background:#C9E4FF; padding:6px; border-radius:10px;")
-            else:  # OnProgress
-                badge.setStyleSheet("background:#F7E6A6; padding:6px; border-radius:10px;")
-
-            row.addWidget(label)
-            row.addWidget(badge)
-            row.addStretch()
-            layout.addLayout(row)
-
-        return card
+        
+        row.addWidget(lbl_bank)
+        row.addLayout(info_layout)
+        row.addStretch()
+        row.addWidget(btn_copy)
+        
+        layout.addLayout(row)
+        
+        line = QFrame()
+        line.setFixedHeight(1)
+        line.setStyleSheet("background-color: #EEE; border: none;")
+        layout.addWidget(line)
 
     def upload_bukti(self):
-            file_path, _ = QFileDialog.getOpenFileName(
-                self,
-                "Pilih Bukti Pembayaran",
-                "",
-                "Images (*.png *.jpg *.jpeg)"
-            )
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Pilih Bukti Pembayaran", "", "Images (*.png *.jpg *.jpeg)"
+        )
+        if file_path:
+            QMessageBox.information(self, "Upload Sukses", "Bukti pembayaran berhasil diupload!")
+            self.close()
 
-            if file_path:
-                QMessageBox.information(
-                    self,
-                    "Upload Sukses",
-                    "Bukti pembayaran berhasil diupload!"
-                )
 
-                # TODO: Simpan ke database:
-                # save_payment_proof(file_path)
+# --- HOMEPAGE PENGHUNI ---
+class PenghuniHomepage(QWidget):
+    def __init__(self, penghuni_data=None):
+        super().__init__()
+        
+        if not penghuni_data:
+            self.data = {
+                "nama": "Penghuni", "kamar": "-", "harga": 0, "masuk": "-",
+                "bulan_ke": 0, "pembayaran_lunas": False, "layanan": {}
+            }
+        else:
+            self.data = penghuni_data
 
-                self.close()
+        self.setObjectName("Homepage")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self._setup_styles()
+        self._setup_ui()
+
+    def _setup_styles(self):
+        # --- CSS PERBAIKAN ---
+        self.setStyleSheet("""
+            QWidget#Homepage {
+                background-color: #FFFFFF; 
+            }
             
+            /* PERBAIKAN 1: Paksa semua Label tidak punya border dan warnanya gelap */
+            QLabel {
+                font-family: 'Segoe UI', sans-serif;
+                color: #2D3142;
+                border: none;
+                background: transparent;
+            }
+            
+            /* PERBAIKAN 2: Hanya QFrame dengan ID tertentu yang punya border */
+            QFrame#InfoCard, QFrame#BillCard, QFrame#ServicesCard {
+                background-color: #F8FAFC;
+                border: 1px solid #E2E8F0;
+                border-radius: 16px;
+            }
+            
+            /* Badge Bulan */
+            QFrame#Badge {
+                background-color: #E8D5A8;
+                border-radius: 60px;
+                border: 4px solid white;
+            }
+            
+            /* Tombol */
+            QPushButton.ActionBtn {
+                background-color: #FF9966; color: white;
+                border-radius: 10px; padding: 8px 16px;
+                font-weight: bold; border: none;
+            }
+            QPushButton.ActionBtn:hover { background-color: #FF8C4D; }
+        """)
+
+    def _setup_ui(self):
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(40, 40, 40, 40)
+        main_layout.setSpacing(30)
+
+        # 1. Welcome Header
+        header_layout = QVBoxLayout()
+        header_layout.setSpacing(5)
+        
+        lbl_welcome = QLabel(f"Halo, {self.data['nama']} 👋")
+        lbl_welcome.setFont(QFont("Segoe UI", 26, QFont.Weight.Bold))
+        
+        lbl_sub = QLabel("Selamat datang kembali di Kos Melati. Berikut ringkasan status Anda.")
+        lbl_sub.setStyleSheet("color: #888; font-size: 16px;")
+        
+        header_layout.addWidget(lbl_welcome)
+        header_layout.addWidget(lbl_sub)
+        main_layout.addLayout(header_layout)
+
+        # 2. Top Section (Grid Layout)
+        grid_layout = QHBoxLayout()
+        grid_layout.setSpacing(25)
+
+        # --- CARD 1: INFO KAMAR ---
+        card_info = self._create_info_card()
+        grid_layout.addWidget(card_info, 2)
+
+        # --- CARD 2: TAGIHAN ---
+        card_bill = self._create_bill_card()
+        grid_layout.addWidget(card_bill, 1)
+
+        main_layout.addLayout(grid_layout)
+
+        # 3. Bottom Section (Layanan)
+        lbl_layanan = QLabel("Status Layanan Aktif")
+        lbl_layanan.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
+        main_layout.addWidget(lbl_layanan)
+
+        card_layanan = self._create_services_card()
+        main_layout.addWidget(card_layanan)
+
+        main_layout.addStretch()
+
+    def _create_shadow(self, target_widget):
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(20); shadow.setXOffset(0); shadow.setYOffset(4)
+        shadow.setColor(QColor(0, 0, 0, 15))
+        target_widget.setGraphicsEffect(shadow)
+
+    # --- CARD BUILDERS ---
+
+    def _create_info_card(self):
+        card = QFrame()
+        card.setObjectName("InfoCard") # ID Selector digunakan di CSS
+        self._create_shadow(card)
+
+        layout = QHBoxLayout(card)
+        layout.setContentsMargins(25, 25, 25, 25)
+        layout.setSpacing(20)
+
+        # Left Side
+        details_layout = QVBoxLayout()
+        details_layout.setSpacing(15)
+
+        def add_detail_row(icon, label, value):
+            row = QHBoxLayout()
+            row.setSpacing(10)
+            lbl_icon = QLabel(icon)
+            lbl_icon.setFixedSize(24, 24)
+            lbl_icon.setStyleSheet("font-size: 16px;")
+            
+            v_layout = QVBoxLayout()
+            v_layout.setSpacing(2)
+            lbl_title = QLabel(label)
+            lbl_title.setStyleSheet("font-size: 12px; color: #888; font-weight: bold;")
+            lbl_val = QLabel(value)
+            lbl_val.setStyleSheet("font-size: 16px; font-weight: 600;")
+            
+            v_layout.addWidget(lbl_title)
+            v_layout.addWidget(lbl_val)
+            
+            row.addWidget(lbl_icon)
+            row.addLayout(v_layout)
+            return row
+
+        details_layout.addLayout(add_detail_row("🏠", "NOMOR KAMAR", self.data['kamar']))
+        details_layout.addLayout(add_detail_row("📅", "TANGGAL MASUK", self.data['masuk']))
+        details_layout.addLayout(add_detail_row("💵", "HARGA BULANAN", f"Rp. {self.data['harga']:,}"))
+        details_layout.addStretch()
+
+        layout.addLayout(details_layout)
+
+        # Right Side (Badge)
+        right_layout = QVBoxLayout()
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        
+        badge = QFrame()
+        badge.setObjectName("Badge")
+        badge.setFixedSize(120, 120)
+        
+        badge_shadow = QGraphicsDropShadowEffect(self)
+        badge_shadow.setBlurRadius(10); badge_shadow.setColor(QColor(0,0,0,20))
+        badge.setGraphicsEffect(badge_shadow)
+
+        badge_layout = QVBoxLayout(badge)
+        badge_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        badge_layout.setSpacing(0)
+        
+        lbl_angka = QLabel(str(self.data['bulan_ke']))
+        lbl_angka.setStyleSheet("font-size: 42px; font-weight: bold;")
+        lbl_angka.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        lbl_text = QLabel("Bulan Ke")
+        lbl_text.setStyleSheet("font-size: 12px; color: #555; font-weight: 600;")
+        lbl_text.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        badge_layout.addWidget(lbl_angka)
+        badge_layout.addWidget(lbl_text)
+        
+        right_layout.addWidget(badge)
+        right_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight)
+        
+        layout.addLayout(right_layout)
+        return card
+
+    def _create_bill_card(self):
+        card = QFrame()
+        card.setObjectName("BillCard") # ID Selector
+        
+        # Background card putih agar menonjol dari background abu halus homepage
+        card.setStyleSheet("QFrame#BillCard { background-color: white; }")
+        self._create_shadow(card)
+
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(25, 25, 25, 25)
+        layout.setSpacing(10)
+
+        lbl_title = QLabel("Status Tagihan Bulan Ini")
+        lbl_title.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+        lbl_title.setStyleSheet("color: #888; text-transform: uppercase;")
+        layout.addWidget(lbl_title)
+
+        is_lunas = self.data["pembayaran_lunas"]
+
+        if is_lunas:
+            status_frame = QFrame()
+            status_frame.setObjectName("StatusLunas")
+            status_frame.setStyleSheet("#StatusLunas { background-color: #E6FFFA; border-radius: 10px; border: 1px solid #B2F5EA; }")
+            sf_layout = QHBoxLayout(status_frame)
+            
+            lbl_icon = QLabel("✅")
+            lbl_text = QLabel("LUNAS")
+            lbl_text.setStyleSheet("color: #285E61; font-weight: bold; font-size: 18px;")
+            
+            sf_layout.addWidget(lbl_icon)
+            sf_layout.addWidget(lbl_text)
+            sf_layout.addStretch()
+            
+            layout.addWidget(status_frame)
+            
+            desc = QLabel("Terima kasih sudah membayar tepat waktu.")
+            desc.setWordWrap(True)
+            desc.setStyleSheet("color: #718096; font-size: 13px;")
+            layout.addWidget(desc)
+            
+        else:
+            status_frame = QFrame()
+            status_frame.setObjectName("StatusBelum")
+            status_frame.setStyleSheet("#StatusBelum { background-color: #FFF5F5; border-radius: 10px; border: 1px solid #FEB2B2; }")
+            sf_layout = QHBoxLayout(status_frame)
+            
+            lbl_icon = QLabel("⚠️")
+            lbl_text = QLabel("BELUM LUNAS")
+            lbl_text.setStyleSheet("color: #C53030; font-weight: bold; font-size: 18px;")
+            
+            sf_layout.addWidget(lbl_icon)
+            sf_layout.addWidget(lbl_text)
+            sf_layout.addStretch()
+            
+            layout.addWidget(status_frame)
+            
+            btn_bayar = QPushButton("Bayar Sekarang")
+            btn_bayar.setProperty("class", "ActionBtn")
+            btn_bayar.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn_bayar.clicked.connect(self.show_pembayaran_dialog)
+            
+            layout.addSpacing(10)
+            layout.addWidget(btn_bayar)
+
+        layout.addStretch()
+        return card
+
+    def _create_services_card(self):
+        card = QFrame()
+        card.setObjectName("ServicesCard")
+        card.setStyleSheet("QFrame#ServicesCard { background-color: white; }")
+        self._create_shadow(card)
+
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(25, 20, 25, 20)
+        layout.setSpacing(0)
+
+        # Header Row
+        header = QHBoxLayout()
+        header.setSpacing(10)
+        lbl_h1 = QLabel("NAMA LAYANAN"); lbl_h1.setStyleSheet("font-weight: bold; color: #888; font-size: 12px;")
+        lbl_h2 = QLabel("STATUS PENGERJAAN"); lbl_h2.setStyleSheet("font-weight: bold; color: #888; font-size: 12px;")
+        
+        header.addWidget(lbl_h1, stretch=2)
+        header.addWidget(lbl_h2, stretch=1)
+        header.setAlignment(lbl_h2, Qt.AlignmentFlag.AlignCenter)
+        
+        layout.addLayout(header)
+        
+        line = QFrame(); line.setFixedHeight(1); line.setStyleSheet("background: #EEE; margin-top: 10px; margin-bottom: 10px; border: none;")
+        layout.addWidget(line)
+
+        layanan_data = self.data.get("layanan", {})
+        if not layanan_data:
+            layout.addWidget(QLabel("Tidak ada layanan aktif saat ini."))
+        
+        for nama, status in layanan_data.items():
+            row = QHBoxLayout()
+            
+            lbl_nama = QLabel(nama)
+            lbl_nama.setFont(QFont("Segoe UI", 14))
+            
+            lbl_status = QLabel(status)
+            lbl_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            lbl_status.setFixedSize(120, 30)
+            lbl_status.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+            
+            if status == "Done":
+                lbl_status.setText("Selesai")
+                lbl_status.setStyleSheet("background-color: #C6F6D5; color: #22543D; border-radius: 15px;")
+            elif status == "OnProgress":
+                lbl_status.setText("Diproses")
+                lbl_status.setStyleSheet("background-color: #FEFCBF; color: #744210; border-radius: 15px;")
+            else: 
+                lbl_status.setText("Menunggu")
+                lbl_status.setStyleSheet("background-color: #EDF2F7; color: #4A5568; border-radius: 15px;")
+            
+            row.addWidget(lbl_nama, stretch=2)
+            row.addWidget(lbl_status, stretch=1)
+            row.setAlignment(lbl_status, Qt.AlignmentFlag.AlignCenter)
+            
+            layout.addLayout(row)
+            
+            sep = QFrame()
+            sep.setFixedHeight(1)
+            sep.setStyleSheet("background: #FAFAFA; border: none;")
+            layout.addWidget(sep)
+            
+        layout.addStretch()
+        return card
+
     def show_pembayaran_dialog(self):
         dlg = PembayaranDialog()
         dlg.exec()
 
-
-
+# --- TEST STANDALONE ---
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    app.setFont(QFont("Segoe UI", 10))
+    
+    dummy_data = {
+        "nama": "Ahmad Husein",
+        "kamar": "A01",
+        "harga": 2000000,
+        "masuk": "10 Januari 2023",
+        "bulan_ke": 7,
+        "pembayaran_lunas": False,
+        "layanan": {
+            "Laundry Kilat": "Waiting",
+            "Catering Harian": "Done",
+            "Pembersihan Kamar": "OnProgress",
+        }
+    }
+    
+    window = PenghuniHomepage(dummy_data)
+    window.resize(1000, 700)
+    window.show()
+    
+    sys.exit(app.exec())
