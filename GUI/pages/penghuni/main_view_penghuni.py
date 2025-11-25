@@ -100,6 +100,18 @@ class MainViewPenghuni(QMainWindow):
         if menu_id == 'homepage': self.show_homepage()
         elif menu_id == 'layanan': self.show_layanan()
         elif menu_id == 'berikan_feedback': self.show_feedback()
+        self.update_sidebar(menu_id)
+
+
+
+    def update_sidebar(self, active_menu):
+        self.setUpdatesEnabled(False)
+        self.main_layout.removeWidget(self.sidebar)
+        self.sidebar.deleteLater()
+        self.sidebar = Sidebar(parent=self, on_menu_click=self.handle_navigation, active_menu=active_menu)
+        self.sidebar.setFixedWidth(280)
+        self.main_layout.insertWidget(0, self.sidebar)
+        self.setUpdatesEnabled(True)
 
     def clear_page(self):
         layout = self.page_container.layout()
