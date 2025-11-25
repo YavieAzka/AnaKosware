@@ -9,14 +9,15 @@ from PyQt6.QtCore import Qt
 # ====================================================
 # IMPORT KOMPONEN (Sidebar + Header)
 # ====================================================
-from components.penjaga.sidebar import Sidebar # Import Sidebar Penjaga
-from components.penjaga.header import Header  # Import Header Penjaga
+# Pastikan path ini benar di struktur folder Anda
+from GUI.components.penjaga.sidebar import Sidebar 
+from GUI.components.penjaga.header import Header 
 
 # ====================================================
 # IMPORT HALAMAN (Pages)
 # ====================================================
-from pages.penjaga.dashboard_pesanan import DashboardPenjaga  # Halaman Dashboard Penjaga
-from pages.penjaga.edit_layanan import EditLayananPenjaga  # Halaman Edit Layanan Penjaga
+from GUI.pages.penjaga.dashboard_pesanan import DashboardPenjaga 
+from GUI.pages.penjaga.edit_layanan import EditLayanan 
 
 
 class MainViewPenjaga(QMainWindow):
@@ -54,7 +55,7 @@ class MainViewPenjaga(QMainWindow):
         # =====================================
         # SIDEBAR (Penjaga)
         # =====================================
-        self.sidebar = SidebarPenjaga(
+        self.sidebar = Sidebar(
             parent=self,
             on_menu_click=self.handle_navigation,
             active_menu="dashboard"  # Menyesuaikan dengan menu default penjaga
@@ -80,7 +81,7 @@ class MainViewPenjaga(QMainWindow):
         self.content_layout.setSpacing(0)
 
         # ========= HEADER =========
-        self.header = HeaderPenjaga(
+        self.header = Header(
             parent=self.content_area,
             user_name=self.current_user_name,
             user_role=self.current_user_role
@@ -90,7 +91,9 @@ class MainViewPenjaga(QMainWindow):
         # ========= PAGE CONTAINER =========
         self.page_container = QFrame()
         self.page_container.setLayout(QVBoxLayout())
-        self.page_container.layout().setContentsMargins(40, 30, 40, 40)
+        # PERBAIKAN: Mengatur margin kontainer halaman menjadi 0, 
+        # seperti di MainViewPenghuni, sehingga padding diatur oleh halaman itu sendiri.
+        self.page_container.layout().setContentsMargins(0, 0, 0, 0) 
         self.content_layout.addWidget(self.page_container, stretch=1)
 
         # Add to main layout
@@ -100,7 +103,7 @@ class MainViewPenjaga(QMainWindow):
         self.show_dashboard()
 
     # ============================================================
-    #       NAVIGATION HANDLER
+    #       NAVIGATION HANDLER
     # ============================================================
     def handle_navigation(self, menu_id):
         if menu_id == "dashboard":
@@ -113,24 +116,17 @@ class MainViewPenjaga(QMainWindow):
         # Update active highlight di sidebar
         self.update_sidebar(menu_id)
 
-    def update_sidebar(self, active):
+    def update_sidebar(self, active_menu):
         self.setUpdatesEnabled(False)
-
         self.main_layout.removeWidget(self.sidebar)
         self.sidebar.deleteLater()
-
-        self.sidebar = SidebarPenjaga(
-            parent=self,
-            on_menu_click=self.handle_navigation,
-            active_menu=active
-        )
-        self.sidebar.setFixedWidth(260)
+        self.sidebar = Sidebar(parent=self, on_menu_click=self.handle_navigation, active_menu=active_menu)
+        self.sidebar.setFixedWidth(280)
         self.main_layout.insertWidget(0, self.sidebar)
-
         self.setUpdatesEnabled(True)
 
     # ============================================================
-    #       PAGE SWITCHING
+    #       PAGE SWITCHING
     # ============================================================
     def clear_page(self):
         layout = self.page_container.layout()
@@ -141,16 +137,18 @@ class MainViewPenjaga(QMainWindow):
 
     def show_dashboard(self):
         self.clear_page()
-        page = DashboardPenjaga(self.page_container, self)
+        # PERBAIKAN: Hanya panggil konstruktor tanpa argumen tambahan, 
+        # sesuai dengan error "takes 1 positional argument (self)".
+        page = DashboardPenjaga() 
         self.page_container.layout().addWidget(page)
 
     def show_edit_layanan(self):
         self.clear_page()
-        page = EditLayananPenjaga()
+        page = EditLayanan()
         self.page_container.layout().addWidget(page)
 
     # ============================================================
-    #       LOGOUT HANDLER
+    #       LOGOUT HANDLER
     # ============================================================
     def handle_logout(self):
         reply = QMessageBox.question(
@@ -164,9 +162,10 @@ class MainViewPenjaga(QMainWindow):
 
 
 # ============================================================
-#       RUN FOR TESTING
+#       RUN FOR TESTING
 # ============================================================
 if __name__ == "__main__":
+    
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     app.setFont(QFont("Segoe UI", 10))
