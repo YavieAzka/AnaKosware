@@ -1,387 +1,309 @@
-"""
-Riwayat Transaksi page for AnaKosware application - PyQt6 Version
-Layout: Tabs (Separated Tables for Bills & Services)
-"""
 import sys
+import os
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-    QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, 
-    QHeaderView, QAbstractItemView, QFrame, QMessageBox, 
-    QGraphicsDropShadowEffect, QMenu, QTabWidget
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTableWidget, 
+    QTableWidgetItem, QPushButton, QHeaderView, QAbstractItemView, 
+    QFrame, QMessageBox, QDialog, QScrollArea, QSizePolicy
 )
-from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QFont, QColor, QCursor, QAction
+from PyQt6.QtGui import QFont, QColor, QCursor, QPixmap
+from PyQt6.QtCore import Qt
 
-# --- IMPORT BACKEND ---
+# --- IMPORT SERVICE ---
 try:
-    from history.bill_history import BillHistory
-    from history.service_history import ServiceHistory
+    from verification.verification_service import VerificationService
 except ImportError:
-    print("Warning: Backend History Services not found.")
-    BillHistory = None
-    ServiceHistory = None
+    VerificationService = None
 
 class RiwayatTransaksi(QWidget):
-    """Halaman untuk menampilkan riwayat transaksi dengan Tab"""
-    
     def __init__(self, parent=None, controller=None):
         super().__init__(parent)
         self.controller = controller
+        self.service = VerificationService() if VerificationService else None
         
-        # --- INISIALISASI BACKEND ---
-        if BillHistory and ServiceHistory:
-            self.bill_service = BillHistory()
-            self.service_history = ServiceHistory()
-        else:
-            self.bill_service = None
-            self.service_history = None
-            
-        self.setObjectName("TransactionPage")
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        
-        # Main Layout
-        self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(40, 40, 40, 40)
-        self.main_layout.setSpacing(20)
-        
-        self._setup_styles()
-        self.create_content()
+        self.setup_ui()
+        self.load_data()
 
-    def _setup_styles(self):
-        self.setStyleSheet("""
-            QWidget#TransactionPage { background-color: white; }
-            QLabel#PageTitle {
-                font-family: 'Segoe UI'; font-size: 24px; font-weight: bold; color: #2D3142;
-            }
-            QLineEdit {
-                padding: 10px 15px; border: 1px solid #E0E0E0; border-radius: 8px;
-                background-color: #F8F9FA; font-size: 14px; color: #333333;
-            }
-            QLineEdit:focus { border: 1px solid #4A90E2; background-color: white; }
-            QPushButton {
-                padding: 8px 20px; border: 1px solid #E0E0E0; border-radius: 8px;
-                background-color: white; color: #333333; font-weight: 600;
-            }
-            QPushButton:hover { background-color: #F5F5F5; }
-            
-            /* TAB WIDGET STYLING */
-            QTabWidget::pane {
-                border: 1px solid #E0E0E0;
-                border-radius: 10px;
-                background: white;
-                top: -1px; 
-            }
-            QTabBar::tab {
-                background: #F8F9FA;
-                border: 1px solid #E0E0E0;
-                padding: 12px 25px;
-                margin-right: 5px;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-                color: #666;
-                font-weight: 600;
-            }
-            QTabBar::tab:selected {
-                background: #E8D5A8; /* Warna Aksen */
-                color: #2D3142;
-                border-bottom-color: #E8D5A8; /* Blend with pane */
-            }
-            
-            /* TABLE STYLING */
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(20)
+
+        # Header
+        lbl_title = QLabel("Riwayat Transaksi Masuk")
+        lbl_title.setFont(QFont("Segoe UI", 24, QFont.Weight.Bold))
+        lbl_title.setStyleSheet("color: #2D3142;")
+        layout.addWidget(lbl_title)
+
+        # Tabel
+        self.table = QTableWidget()
+        self.table.setColumnCount(7)
+        self.table.setHorizontalHeaderLabels([
+            "ID", "Tanggal", "Penghuni", "Tipe", "Nominal", "Status", "Aksi"
+        ])
+        
+        # Table Properties
+        self.table.verticalHeader().setVisible(False)
+        self.table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+        self.table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.table.setShowGrid(False) # Hilangkan grid agar lebih bersih
+        
+        # Header Resize Modes
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents) # ID
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed) # Status Fixed Width
+        self.table.setColumnWidth(5, 130)
+        header.setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed) # Aksi Fixed Width
+        self.table.setColumnWidth(6, 100)
+
+        # Style Table
+        self.table.setStyleSheet("""
             QTableWidget {
-                background-color: white; border: none; gridline-color: #F0F0F0; font-size: 14px;
+                background-color: white; 
+                border: 1px solid #E2E8F0; 
+                border-radius: 10px;
+                font-family: 'Segoe UI';
+                font-size: 14px;
+            }
+            QTableWidget::item {
+                padding: 5px;
+                border-bottom: 1px solid #F1F5F9;
             }
             QHeaderView::section {
-                background-color: #F1F1F1; color: #333333; padding: 12px;
-                border: none; font-weight: bold; font-family: 'Segoe UI';
+                background-color: #F8FAFC; 
+                padding: 12px; 
+                border: none; 
+                font-weight: bold; 
+                color: #475569;
             }
         """)
+        
+        layout.addWidget(self.table)
+        
+        # Refresh Button
+        btn_refresh = QPushButton("🔄 Refresh Data")
+        btn_refresh.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_refresh.setFixedSize(140, 45)
+        btn_refresh.setStyleSheet("""
+            QPushButton { background-color: #3B82F6; color: white; border-radius: 8px; font-weight: bold; }
+            QPushButton:hover { background-color: #2563EB; }
+        """)
+        btn_refresh.clicked.connect(self.load_data)
+        layout.addWidget(btn_refresh, alignment=Qt.AlignmentFlag.AlignRight)
 
-    def create_content(self):
-        """Membuat layout halaman"""
-        # 1. Judul
-        title = QLabel("Riwayat Transaksi")
-        title.setObjectName("PageTitle")
-        self.main_layout.addWidget(title)
+    def load_data(self):
+        if not self.service:
+            return
         
-        # 2. Search Bar Global
-        self.create_search_filter()
+        # Bersihkan tabel
+        self.table.setRowCount(0)
         
-        # 3. Tabs Container
-        self.tabs = QTabWidget()
-        self.tabs.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        try:
+            data = self.service.get_all_transactions()
+        except Exception as e:
+            print(f"Error Fetching Data: {e}")
+            data = []
         
-        # --- TAB 1: TAGIHAN BULANAN ---
-        self.tab_tagihan = QWidget()
-        self.layout_tagihan = QVBoxLayout(self.tab_tagihan)
-        self.layout_tagihan.setContentsMargins(10, 20, 10, 10)
+        self.table.setRowCount(len(data))
         
-        cols_tagihan = ["Tanggal Bayar", "Penghuni", "Kamar", "Periode", "Nominal", "Status", "Action"]
-        self.table_tagihan = self.create_table_structure(cols_tagihan)
-        self.layout_tagihan.addWidget(self.table_tagihan)
-        
-        # --- TAB 2: RIWAYAT LAYANAN ---
-        self.tab_layanan = QWidget()
-        self.layout_layanan = QVBoxLayout(self.tab_layanan)
-        self.layout_layanan.setContentsMargins(10, 20, 10, 10)
-        
-        cols_layanan = ["Tanggal Request", "Penghuni", "Kamar", "Jenis Layanan", "Total Harga", "Status Pengerjaan", "Action"]
-        self.table_layanan = self.create_table_structure(cols_layanan)
-        self.layout_layanan.addWidget(self.table_layanan)
-        
-        # Add Tabs to Widget
-        self.tabs.addTab(self.tab_tagihan, "💰  Tagihan Bulanan")
-        self.tabs.addTab(self.tab_layanan, "🛠️  Riwayat Layanan")
-        
-        # Shadow Effect untuk Tab
-        shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(20)
-        shadow.setXOffset(0)
-        shadow.setYOffset(5)
-        shadow.setColor(QColor(0, 0, 0, 15))
-        self.tabs.setGraphicsEffect(shadow)
-        
-        self.main_layout.addWidget(self.tabs)
-        
-        # 4. Load Data
-        self.load_data_tagihan()
-        self.load_data_layanan()
+        for row, item in enumerate(data):
+            # Set Height Row agar Widget tidak gepeng
+            self.table.setRowHeight(row, 50)
 
-        # Event saat tab berubah (opsional, utk refresh search)
-        self.tabs.currentChanged.connect(self.on_search)
+            # 1. ID
+            self._set_text_item(row, 0, str(item.get('pembayaran_id', '-')))
+            
+            # 2. Tanggal
+            tgl = item['tanggal_bayar'].strftime("%d/%m/%Y") if item.get('tanggal_bayar') else "-"
+            self._set_text_item(row, 1, tgl)
+            
+            # 3. Penghuni
+            nama = item.get('nama_penghuni', 'Unknown')
+            kamar = item.get('nomor_kamar', '-')
+            self._set_text_item(row, 2, f"{nama} ({kamar})")
+            
+            # 4. Tipe
+            tipe = "Sewa Bulanan" if item.get('jenis_pembayaran') == 'TAGIHAN' else f"Layanan: {item.get('nama_layanan', '-')}"
+            self._set_text_item(row, 3, tipe)
+            
+            # 5. Nominal
+            nom = item.get('nominal_pembayaran', 0)
+            self._set_text_item(row, 4, f"Rp {int(nom):,}")
+            
+            # 6. Status (Widget Badge)
+            status_txt = item.get('status_pembayaran', 'Unknown')
+            self._set_status_widget(row, 5, status_txt)
+            
+            # 7. Aksi (Widget Button)
+            self._set_action_widget(row, 6, item)
 
-    def create_search_filter(self):
+    def _set_text_item(self, row, col, text):
+        item = QTableWidgetItem(text)
+        item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.table.setItem(row, col, item)
+
+    def _set_status_widget(self, row, col, status_txt):
+        # Container
         container = QWidget()
         layout = QHBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 10)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        # Label Badge
+        lbl = QLabel(status_txt)
+        lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        lbl.setFixedSize(120, 26) # Ukuran fix agar rapi
+        
+        if status_txt == "Sudah diverifikasi":
+            style = "color: #065F46; background-color: #D1FAE5; border-radius: 13px;"
+        elif status_txt == "Ditolak":
+            style = "color: #991B1B; background-color: #FEE2E2; border-radius: 13px;"
+        else: # Belum diverifikasi
+            style = "color: #92400E; background-color: #FEF3C7; border-radius: 13px;"
+            
+        lbl.setStyleSheet(style)
+        layout.addWidget(lbl)
+        self.table.setCellWidget(row, col, container)
+
+    def _set_action_widget(self, row, col, item_data):
+        container = QWidget()
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        btn = QPushButton("Lihat Bukti")
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn.setFixedSize(90, 30)
+        btn.setStyleSheet("""
+            QPushButton { 
+                background-color: white;
+                border: 1px solid #CBD5E0; 
+                border-radius: 6px; 
+                color: #475569; 
+                font-weight: 600; 
+                font-size: 12px;
+            }
+            QPushButton:hover { background-color: #F1F5F9; border-color: #94A3B8; }
+        """)
+        
+        # Gunakan default argument pada lambda untuk mengunci nilai item_data
+        btn.clicked.connect(lambda checked, d=item_data: self.open_detail_dialog(d))
+        
+        layout.addWidget(btn)
+        self.table.setCellWidget(row, col, container)
+
+    def open_detail_dialog(self, data):
+        dlg = TransactionDetailDialog(data, self.service, self)
+        dlg.exec()
+        self.load_data() # Refresh setelah dialog tutup
+
+
+class TransactionDetailDialog(QDialog):
+    def __init__(self, data, service, parent=None):
+        super().__init__(parent)
+        self.data = data
+        self.service = service
+        self.setWindowTitle("Verifikasi Pembayaran")
+        self.setFixedSize(500, 700)
+        self.setStyleSheet("background-color: white;")
+        
+        layout = QVBoxLayout(self)
         layout.setSpacing(15)
+        layout.setContentsMargins(30, 30, 30, 30)
         
-        self.search_entry = QLineEdit()
-        self.search_entry.setPlaceholderText("🔍 Cari transaksi (berdasarkan tab yang aktif)...")
-        self.search_entry.setMinimumWidth(350)
-        self.search_entry.textChanged.connect(self.on_search) 
+        # Judul
+        layout.addWidget(QLabel(f"Detail Transaksi #{self.data['pembayaran_id']}", styleSheet="font-size: 18px; font-weight: bold; color: #2D3142;"))
         
-        filter_btn = QPushButton("Refresh ↻")
-        filter_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        filter_btn.clicked.connect(self.refresh_data)
+        # Info Grid Frame
+        info_frame = QFrame()
+        info_frame.setStyleSheet("background-color: #F8FAFC; border-radius: 10px; border: 1px solid #E2E8F0;")
+        gl = QVBoxLayout(info_frame)
+        gl.setSpacing(8)
         
-        layout.addWidget(self.search_entry)
-        layout.addStretch()
-        layout.addWidget(filter_btn)
-        self.main_layout.addWidget(container)
-
-    def create_table_structure(self, columns):
-        table = QTableWidget()
-        table.setColumnCount(len(columns))
-        table.setHorizontalHeaderLabels(columns)
-        table.setShowGrid(False)
-        table.setAlternatingRowColors(True)
-        table.verticalHeader().setVisible(False)
-        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.add_row(gl, "Penghuni:", self.data.get('nama_penghuni', '-'))
+        self.add_row(gl, "Nominal:", f"Rp {int(self.data.get('nominal_pembayaran', 0)):,}")
+        self.add_row(gl, "Tanggal:", str(self.data.get('tanggal_bayar', '-')))
+        self.add_row(gl, "Status:", self.data.get('status_pembayaran', '-'))
         
-        header = table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        layout.addWidget(info_frame)
         
-        # Lebar kolom Action fix
-        idx_action = len(columns) - 1
-        header.setSectionResizeMode(idx_action, QHeaderView.ResizeMode.Fixed)
-        table.setColumnWidth(idx_action, 80)
+        # Bukti Gambar Section
+        layout.addWidget(QLabel("Bukti Transfer:", styleSheet="font-weight: bold; margin-top: 10px; color: #2D3142;"))
         
-        # Connect signal
-        table.cellClicked.connect(lambda r, c, t=table: self.on_cell_click(r, c, t))
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("border: 1px dashed #CBD5E0; border-radius: 8px; background-color: #FAFAFA;")
         
-        return table
-
-    # --- DATA LOADING ---
-
-    def refresh_data(self):
-        self.load_data_tagihan()
-        self.load_data_layanan()
-        QMessageBox.information(self, "Info", "Data berhasil diperbarui.")
-
-    def load_data_tagihan(self):
-        if not self.bill_service: return
-        try:
-            data = self.bill_service.get_riwayat_tagihan()
-            self.populate_tagihan(data)
-        except Exception as e:
-            print(f"Error Tagihan: {e}")
-
-    def load_data_layanan(self):
-        if not self.service_history: return
-        try:
-            data = self.service_history.get_riwayat_layanan()
-            self.populate_layanan(data)
-        except Exception as e:
-            print(f"Error Layanan: {e}")
-
-    def populate_tagihan(self, data_list):
-        table = self.table_tagihan
-        table.setRowCount(0)
-        table.setRowCount(len(data_list))
+        img_container = QLabel()
+        img_container.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        self.tagihan_map = {} # Simpan data asli untuk popup
-
-        for i, item in enumerate(data_list):
-            self.tagihan_map[i] = item
-            
-            # Kolom: Tanggal, Penghuni, Kamar, Periode, Nominal, Status, Action
-            self.set_cell(table, i, 0, item['tanggal'])
-            self.set_cell(table, i, 1, f"{item['nama_penghuni']}\n({item['username']})")
-            self.set_cell(table, i, 2, item['kamar'])
-            self.set_cell(table, i, 3, item['periode'])
-            
-            nominal = f"Rp. {item['nominal']:,.0f}".replace(",", ".")
-            self.set_cell(table, i, 4, nominal)
-            
-            self.set_status_cell(table, i, 5, item['status'])
-            self.set_action_cell(table, i, 6)
-            
-            table.setRowHeight(i, 55)
-
-    def populate_layanan(self, data_list):
-        table = self.table_layanan
-        table.setRowCount(0)
-        table.setRowCount(len(data_list))
-        
-        self.layanan_map = {}
-
-        for i, item in enumerate(data_list):
-            self.layanan_map[i] = item
-            
-            # Kolom: Tanggal, Penghuni, Kamar, Jenis Layanan, Harga, Status, Action
-            self.set_cell(table, i, 0, item['tanggal'])
-            self.set_cell(table, i, 1, f"{item['nama_penghuni']}\n({item['username']})")
-            self.set_cell(table, i, 2, item['nomor_kamar'])
-            self.set_cell(table, i, 3, item['layanan'])
-            
-            harga = f"Rp. {item['total_harga']:,.0f}".replace(",", ".")
-            self.set_cell(table, i, 4, harga)
-            
-            self.set_status_cell(table, i, 5, item['status'])
-            self.set_action_cell(table, i, 6)
-            
-            table.setRowHeight(i, 55)
-
-    # --- HELPER UNTUK ISI TABEL ---
-    
-    def set_cell(self, table, row, col, text):
-        item = QTableWidgetItem(str(text))
-        item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-        table.setItem(row, col, item)
-
-    def set_status_cell(self, table, row, col, status_text):
-        item = QTableWidgetItem(status_text)
-        item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-        font = QFont("Segoe UI", 10, QFont.Weight.Bold)
-        item.setFont(font)
-        
-        # Coloring logic
-        if status_text in ['Diterima', 'Selesai']:
-            item.setForeground(QColor("#28A745")) # Hijau
-        elif status_text in ['Ditolak']:
-            item.setForeground(QColor("#DC3545")) # Merah
+        # Load Gambar
+        img_path = self.data.get('bukti_pembayaran')
+        if img_path:
+            abs_path = os.path.abspath(img_path)
+            if os.path.exists(abs_path):
+                pixmap = QPixmap(abs_path)
+                # Scale tapi tetap pertahankan rasio
+                if not pixmap.isNull():
+                    scaled = pixmap.scaled(420, 600, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                    img_container.setPixmap(scaled)
+                else:
+                    img_container.setText("Gagal memuat gambar (Format salah).")
+            else:
+                img_container.setText(f"File tidak ditemukan:\n{abs_path}")
+                img_container.setStyleSheet("color: red; padding: 20px;")
         else:
-            item.setForeground(QColor("#FFC107")) # Kuning/Oranye
+            img_container.setText("Tidak ada bukti upload.")
             
-        table.setItem(row, col, item)
-
-    def set_action_cell(self, table, row, col):
-        item = QTableWidgetItem("📝")
-        item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-        font = QFont(); font.setPointSize(12)
-        item.setFont(font)
-        table.setItem(row, col, item)
-
-    # --- INTERACTION LOGIC ---
-
-    def on_search(self):
-        """Filter tabel berdasarkan tab yang sedang aktif"""
-        search_text = self.search_entry.text().lower()
-        current_idx = self.tabs.currentIndex()
+        scroll.setWidget(img_container)
+        layout.addWidget(scroll)
         
-        # Tentukan tabel mana yang mau difilter
-        target_table = self.table_tagihan if current_idx == 0 else self.table_layanan
-        
-        for row in range(target_table.rowCount()):
-            match = False
-            for col in range(target_table.columnCount() - 1): # Skip action
-                item = target_table.item(row, col)
-                if item and search_text in item.text().lower():
-                    match = True
-                    break
-            target_table.setRowHidden(row, not match)
-
-    def on_cell_click(self, row, col, table):
-        # Cek apakah kolom terakhir (Action) yang diklik
-        action_col_idx = table.columnCount() - 1
-        if col == action_col_idx:
-            # Tentukan jenis data berdasarkan tabel mana yang dikirim
-            data_type = "tagihan" if table == self.table_tagihan else "layanan"
-            self.show_action_menu(QCursor.pos(), row, data_type)
-
-    def show_action_menu(self, global_pos, row, data_type):
-        menu = QMenu(self)
-        menu.setStyleSheet("QMenu { background: white; border: 1px solid #DDD; padding: 5px; }")
-        view_action = menu.addAction("👁️  Lihat Detail")
-        
-        action = menu.exec(global_pos)
-        if action == view_action:
-            self.view_detail(row, data_type)
-
-    def view_detail(self, row, data_type):
-        # Ambil data asli dari map
-        if data_type == "tagihan":
-            data = self.tagihan_map.get(row)
-            title = "Detail Tagihan Bulanan"
-            content = f"""
-            <table>
-                <tr><td><b>Periode</b></td><td>: {data['periode']}</td></tr>
-                <tr><td><b>Penghuni</b></td><td>: {data['nama_penghuni']}</td></tr>
-                <tr><td><b>Kamar</b></td><td>: {data['kamar']}</td></tr>
-                <tr><td><b>Tanggal Bayar</b></td><td>: {data['tanggal']}</td></tr>
-                <tr><td><b>Nominal</b></td><td>: Rp. {data['nominal']:,}</td></tr>
-                <tr><td><b>Status</b></td><td>: {data['status']}</td></tr>
-            </table>
-            <br>
-            <b>Bukti Pembayaran:</b><br>
-            {data.get('bukti_upload', '(Tidak ada file)')}
-            """
+        # Tombol Aksi (Hanya jika status Belum diverifikasi)
+        if self.data.get('status_pembayaran') == 'Belum diverifikasi':
+            btn_layout = QHBoxLayout()
+            btn_layout.setSpacing(15)
+            
+            btn_tolak = QPushButton("Tolak")
+            btn_tolak.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn_tolak.setFixedHeight(40)
+            btn_tolak.setStyleSheet("""
+                QPushButton { background-color: #EF4444; color: white; border-radius: 8px; font-weight: bold; border: none;}
+                QPushButton:hover { background-color: #DC2626; }
+            """)
+            btn_tolak.clicked.connect(lambda: self.process_verif(False))
+            
+            btn_terima = QPushButton("Terima / Verifikasi")
+            btn_terima.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn_terima.setFixedHeight(40)
+            btn_terima.setStyleSheet("""
+                QPushButton { background-color: #10B981; color: white; border-radius: 8px; font-weight: bold; border: none;}
+                QPushButton:hover { background-color: #059669; }
+            """)
+            btn_terima.clicked.connect(lambda: self.process_verif(True))
+            
+            btn_layout.addWidget(btn_tolak)
+            btn_layout.addWidget(btn_terima)
+            layout.addLayout(btn_layout)
         else:
-            data = self.layanan_map.get(row)
-            title = "Detail Request Layanan"
-            content = f"""
-            <table>
-                <tr><td><b>Layanan</b></td><td>: {data['layanan']}</td></tr>
-                <tr><td><b>Penghuni</b></td><td>: {data['nama_penghuni']}</td></tr>
-                <tr><td><b>Kamar</b></td><td>: {data['nomor_kamar']}</td></tr>
-                <tr><td><b>Tanggal Request</b></td><td>: {data['tanggal']}</td></tr>
-                <tr><td><b>Total Biaya</b></td><td>: Rp. {data['total_harga']:,}</td></tr>
-                <tr><td><b>Status</b></td><td>: {data['status']}</td></tr>
-            </table>
-            <br>
-            <b>Rincian Kebutuhan:</b><br>
-            {data['rincian_barang']}
-            <br><br>
-            <b>Bukti Pembayaran:</b><br>
-            {data.get('bukti_upload', '(Bayar Cash/Belum Upload)')}
-            """
+            # Jika sudah selesai
+            lbl_done = QLabel("Transaksi Selesai")
+            lbl_done.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            lbl_done.setStyleSheet("color: #64748B; font-weight: bold; margin-top: 10px; font-size: 14px;")
+            layout.addWidget(lbl_done)
 
-        msg = QMessageBox(self)
-        msg.setWindowTitle(title)
-        msg.setTextFormat(Qt.TextFormat.RichText)
-        msg.setText(content)
-        msg.setIcon(QMessageBox.Icon.Information)
-        msg.exec()
+    def add_row(self, layout, label, val):
+        row = QHBoxLayout()
+        row.addWidget(QLabel(label, styleSheet="color: #64748B; font-weight: 500;"))
+        val_lbl = QLabel(str(val), styleSheet="font-weight: 600; color: #334155;")
+        val_lbl.setAlignment(Qt.AlignmentFlag.AlignRight)
+        row.addWidget(val_lbl)
+        layout.addLayout(row)
 
-# --- Test Standalone ---
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    app.setFont(QFont("Segoe UI", 10))
-    window = RiwayatTransaksi()
-    window.resize(1000, 600)
-    window.show()
-    sys.exit(app.exec())
+    def process_verif(self, is_valid):
+        if self.service.verify_payment(self.data['pembayaran_id'], is_valid):
+            msg = "Pembayaran Diterima" if is_valid else "Pembayaran Ditolak"
+            QMessageBox.information(self, "Sukses", msg)
+            self.accept()
+        else:
+            QMessageBox.warning(self, "Gagal", "Terjadi kesalahan database.")

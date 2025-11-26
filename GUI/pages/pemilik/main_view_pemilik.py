@@ -18,6 +18,7 @@ from GUI.pages.pemilik.dashboard_penghuni import DashboardPenghuni
 from GUI.pages.pemilik.daftar_akun_penghuni import DaftarAkunPenghuni
 from GUI.pages.pemilik.riwayat_transaksi import RiwayatTransaksi
 from GUI.pages.pemilik.feedback_penghuni import FeedbackPenghuni
+from GUI.pages.pemilik.manajemen_akun import ManajemenAkunPage
 
 
 class MainViewPemilik(QMainWindow):
@@ -144,6 +145,7 @@ class MainViewPemilik(QMainWindow):
         elif menu_id == 'register_tenant': self.show_register_tenant()
         elif menu_id == 'transaction': self.show_transaction()
         elif menu_id == 'feedback': self.show_feedback()
+        elif menu_id == 'manage_account': self.show_manajemen_akun()
 
         self.update_sidebar(menu_id)
 
@@ -166,6 +168,12 @@ class MainViewPemilik(QMainWindow):
         self.clear_page()
         self.setWindowTitle("AnaKosware - Dashboard")
         page = DashboardPenghuni(self.page_container, self)
+        self.page_container.layout().addWidget(page)
+        
+    def show_manajemen_akun(self):
+        self.clear_page()
+        self.setWindowTitle("AnaKosware - Manajemen Akun Penghuni")
+        page = ManajemenAkunPage(self.page_container, self)
         self.page_container.layout().addWidget(page)
 
     def show_register_tenant(self):

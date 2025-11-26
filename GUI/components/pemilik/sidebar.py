@@ -1,7 +1,7 @@
 """
 Sidebar component for AnaKosware application - PyQt6 Version
 Style: Modern, Minimalist, Flat Design.
-Fix: Force light background and dark text for visibility in dark mode OS.
+Updated: Added 'Manajemen Akun' menu item.
 """
 import sys
 import os
@@ -20,23 +20,18 @@ class Sidebar(QWidget):
         self.on_menu_click = on_menu_click
         self.active_menu = active_menu
         
-        # PENTING: Atribut ini memaksa widget untuk menggunakan style background-color 
-        # yang didefinisikan di QSS, mengatasi masalah transparansi di dark mode.
+        # PENTING: Force styled background
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
-        # Setup properti dasar Sidebar
         self.setFixedWidth(260)
         self.setObjectName("SidebarContainer")
         
-        # Layout Utama
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(20, 40, 20, 40)
         self.main_layout.setSpacing(10)
 
-        # Setup Style
         self._setup_style()
         
-        # Komponen
         self.create_logo()
         self.main_layout.addSpacing(20)
         self.create_navigation()
@@ -45,20 +40,13 @@ class Sidebar(QWidget):
         self.create_logout()
 
     def _setup_style(self):
-        """Define CSS styles"""
-        # Warna background (#EFE5B7) dan teks (#2D3142) didefinisikan secara eksplisit.
-        # Warna teks dipaksa gelap di semua state agar selalu kontras.
         self.setStyleSheet("""
             QWidget#SidebarContainer {
                 background-color: #EFE5B7;
             }
-            
-            /* Tegaskan warna teks gelap untuk semua label dan button di sidebar */
             QLabel, QPushButton {
                 color: #2D3142;
             }
-
-            /* Style untuk Menu Button */
             QPushButton {
                 text-align: left;
                 padding: 12px 20px;
@@ -67,29 +55,25 @@ class Sidebar(QWidget):
                 font-family: 'Segoe UI', sans-serif;
                 font-size: 14px;
                 background-color: transparent;
-                /* Pastikan warna teks selalu gelap */
                 color: #2D3142;
             }
             QPushButton:hover {
-                background-color: rgba(255, 255, 255, 0.6); /* Lebih solid saat hover */
-                color: #2D3142; /* Teks tetap gelap */
+                background-color: rgba(255, 255, 255, 0.6);
+                color: #2D3142;
             }
             QPushButton:pressed {
                 background-color: rgba(255, 255, 255, 0.8);
                 color: #2D3142;
             }
-            
-            /* State ketika menu Aktif (Checked) */
             QPushButton[checked="true"] {
                 background-color: #FFFFFF;
-                color: #000000; /* Hitam pekat saat aktif */
+                color: #000000;
                 font-weight: bold;
                 border-left: 4px solid #2D3142;
             }
         """)
 
     def create_logo(self):
-        """Create logo section"""
         logo_container = QLabel()
         logo_container.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
@@ -104,28 +88,25 @@ class Sidebar(QWidget):
             )
             logo_container.setPixmap(scaled_pixmap)
         else:
-            # Fallback: Teks AnaKosware dengan warna gelap eksplisit
             logo_container.setText("AnaKosware")
             logo_container.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
-            # Tambahan penegasan warna teks
             logo_container.setStyleSheet("color: #2D3142;")
             
         self.main_layout.addWidget(logo_container)
 
     def create_navigation(self):
-        """Create navigation menu buttons"""
+        # Update Menu List di sini
         menu_items = [
-            ("🏠", "Dashboard", "dashboard"),
-            ("👤", "Daftar Penghuni", "register_tenant"),
-            ("📊", "Riwayat Transaksi", "transaction"),
-            ("👍", "Feedback Record", "feedback")
+            ("📊", "Dashboard", "dashboard"),
+            ("📝", "Daftar Penghuni Baru", "register_tenant"),
+            ("⚙️", "Manajemen Akun", "manage_account"), # Menu Baru Ditambahkan
+            ("💰", "Riwayat Transaksi", "transaction"),
+            ("💬", "Feedback Record", "feedback")
         ]
         
         self.buttons = {}
         
         for icon, text, menu_id in menu_items:
-            # Catatan: Ikon emoji mungkin masih terlihat terang di beberapa OS dark mode.
-            # Solusi terbaik adalah menggunakan QIcon dengan file gambar berwarna hitam.
             btn = QPushButton(f"  {icon}   {text}")
             btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
             btn.setCheckable(True)
@@ -139,7 +120,6 @@ class Sidebar(QWidget):
             self.buttons[menu_id] = btn
 
     def create_logout(self):
-        """Create logout button"""
         line = QFrame()
         line.setFrameShape(QFrame.Shape.HLine)
         line.setFrameShadow(QFrame.Shadow.Sunken)
@@ -153,19 +133,12 @@ class Sidebar(QWidget):
         
         logout_btn.setStyleSheet("""
             QPushButton {
-                text-align: left;
-                padding: 12px 20px;
-                border: none;
-                border-radius: 12px;
-                font-family: 'Segoe UI', sans-serif;
-                font-size: 14px;
-                background-color: transparent; 
-                /* Paksa warna teks gelap */
-                color: #2D3142;
+                text-align: left; padding: 12px 20px; border: none;
+                border-radius: 12px; font-family: 'Segoe UI'; font-size: 14px;
+                background-color: transparent; color: #2D3142;
             }
             QPushButton:hover {
-                background-color: #FFEBEE;
-                color: #D32F2F; /* Merah saat hover */
+                background-color: #FFEBEE; color: #D32F2F;
             }
         """)
         
@@ -173,7 +146,6 @@ class Sidebar(QWidget):
         self.main_layout.addWidget(logout_btn)
 
     def handle_click(self, menu_id):
-        """Handle menu selection logic"""
         if menu_id == 'logout':
             if self.on_menu_click:
                 self.on_menu_click(menu_id)
@@ -186,33 +158,3 @@ class Sidebar(QWidget):
             self.buttons[menu_id].setChecked(True)
         if self.on_menu_click:
             self.on_menu_click(menu_id)
-
-# --- Block Test Standalone ---
-if __name__ == "__main__":
-    def dummy_callback(menu_id):
-        print(f"Menu diklik: {menu_id}")
-
-    app = QApplication(sys.argv)
-    
-    window = QWidget()
-    window.setWindowTitle("Sidebar Test - Dark Mode Fix")
-    window.resize(900, 600)
-    
-    # Set background window utama jadi gelap untuk simulasi
-    window.setStyleSheet("background-color: #222222;")
-    
-    layout = QHBoxLayout(window)
-    layout.setContentsMargins(0, 0, 0, 0)
-    layout.setSpacing(0)
-    
-    sidebar = Sidebar(window, on_menu_click=dummy_callback, active_menu='dashboard')
-    layout.addWidget(sidebar)
-    
-    content = QLabel("Konten Halaman Disini")
-    content.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    # Konten area tetap terang
-    content.setStyleSheet("background-color: white; font-size: 24px; color: #AAA;")
-    layout.addWidget(content, 1)
-    
-    window.show()
-    sys.exit(app.exec())
