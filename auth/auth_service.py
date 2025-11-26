@@ -17,8 +17,8 @@ class AuthService:
     def register_penghuni(self, username: str, nama: str, password: str) -> dict:
         """
         Mendaftarkan akun penghuni baru.
-        Asumsi kolom tabel user: user_id, username, nama, password, jenis_akun, status_akun.
-        jenis_akun untuk penghuni: 'PENGHUNI' (ganti kalau di SQL kalian beda).
+        Asumsi kolom tabel user: user_id, username, nama, password, jenisAkun, status_akun.
+        jenisAkun untuk penghuni: 'PENGHUNI' (ganti kalau di SQL kalian beda).
         status_akun: 1 = aktif, 0 = non-aktif.
         """
 
@@ -50,12 +50,13 @@ class AuthService:
                 "message": "Gagal menyimpan data ke database.",
             }
 
-    def login(self, jenis_akun: chr, username: str, password: str) -> dict:
+
+    def login(self, jenisAkun: str, username: str, password: str) -> dict:
         """
         Memvalidasi login user.
         SELECT * FROM user
         WHERE username = ? AND password = ?
-          AND jenis_akun = ? AND status_akun = 1;
+          AND jenisAkun = ? AND status_akun = 1;
         """
 
         if not username or not password:
@@ -65,15 +66,17 @@ class AuthService:
             }
 
         query = """
+
             SELECT user_id, username, nama, jenisAkun, statusAkun
             FROM user
             WHERE username   = %s
               AND password   = %s
               AND jenisAkun = %s
               AND statusAkun = 1
+
             LIMIT 1
         """
-        params = (username, password, jenis_akun)
+        params = (username, password, jenisAkun)
 
         rows = self.db.execute_query(query, params)
 
@@ -91,11 +94,54 @@ class AuthService:
                 "user_id": user["user_id"],
                 "username": user["username"],
                 "nama": user["nama"],
-                "jenis_akun": user["jenisAkun"],
+
+                "jenisAkun": user["jenisAkun"],
             },
         }
 
     def nonaktifkan_akun_penghuni(self, username: str) -> dict:
-        raise NotImplementedError(
-            "UC03 (nonaktif akun) belum diimplementasikan."
-        )
+        """
+        Menonaktifkan akun penghuni.
+        FIX: Menggunakan statusAkun = 0 (bukan status_akun)
+        """
+        if not username:
+            return {"status": "error", "message": "Username tidak boleh kosong."}
+
+        # Perhatikan nama kolom 'statusAkun'
+        query = """
+            UPDATE user
+            SET statusAkun = 0
+            WHERE username = %s
+        """
+        params = (username,)
+
+        rowcount = self.db.execute_update(query, params)
+
+        if rowcount:
+            return {
+                "status": "success",
+                "message": f"Akun penghuni '{username}' berhasil dinonaktifkan.",
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"Gagal menonaktifkan akun '{username}' (atau akun tidak ditemukan).",
+            }
+    def get_all_penghuni(self) -> list:
+        """
+        Mengambil daftar semua penghuni.
+        PENTING: Kita menggunakan alias 'statusAkun' agar sesuai dengan kode UI.
+        """
+        query = """
+            SELECT 
+                u.user_id, 
+                u.username, 
+                u.nama, 
+                u.statusAkun,  -- Pastikan nama kolom ini sesuai dengan tabel user Anda
+                p.nomor_kamar 
+            FROM user u
+            LEFT JOIN penghuni p ON u.user_id = p.user_id
+            WHERE u.jenisAkun IN ('P', 'PENGHUNI')
+            ORDER BY u.nama ASC
+        """
+        return self.db.execute_query(query)
