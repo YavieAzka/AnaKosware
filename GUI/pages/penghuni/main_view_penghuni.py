@@ -16,7 +16,7 @@ try:
     from GUI.components.pemilik.header import Header
     from GUI.pages.penghuni.homepage_penghuni import PenghuniHomepage
     from GUI.pages.penghuni.berikan_feedback import BerikanFeedback
-    # Import Halaman Layanan yang baru dibuat
+    from layanan_dan_request.request_service import RequestService
     from GUI.pages.penghuni.layanan import PenghuniLayananPage
 except ImportError as e:
     print(f"Error Importing Components: {e}")
@@ -143,12 +143,12 @@ class MainViewPenghuni(QMainWindow):
         self.clear_page()
         self.setWindowTitle("AnaKosware - Layanan")
         
-        # Load Halaman Layanan
         if PenghuniLayananPage:
-            page = PenghuniLayananPage()
+            # PASSING SERVICE & USER ID KE HALAMAN LAYANAN
+            page = PenghuniLayananPage(self.request_service, self._current_user_id)
             self.page_container.layout().addWidget(page)
         else:
-            self.page_container.layout().addWidget(QLabel("Halaman Layanan tidak dapat dimuat."))
+            self.page_container.layout().addWidget(QLabel("Halaman Layanan tidak ditemukan."))
 
     def handle_logout(self):
         reply = QMessageBox.question(

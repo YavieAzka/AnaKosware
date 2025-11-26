@@ -16,6 +16,8 @@ try:
     from GUI.components.penghuni.layanan_catering import CateringInputDialog
     from GUI.components.penghuni.layanan_refill import RefillGalonDialog
     from GUI.components.penghuni.layanan_belanja import BelanjaInputDialog
+    from layanan_dan_request.layanan import Layanan
+    from layanan_dan_request.request_service import RequestService
 except ImportError:
     print("Warning: Komponen layanan tidak ditemukan. Pastikan file ada di folder components/penghuni/")
     LaundryInputDialog = None
@@ -24,8 +26,11 @@ except ImportError:
     BelanjaInputDialog = None
 
 class PenghuniLayananPage(QWidget):
-    def __init__(self):
+    def __init__(self, request_service, user_id):
         super().__init__()
+        self.request_service = request_service
+        self.user_id = user_id
+        
         self.setObjectName("LayananPage")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         
@@ -151,22 +156,23 @@ class PenghuniLayananPage(QWidget):
     # --- POPUP HANDLERS ---
     def show_laundry_popup(self):
         if LaundryInputDialog:
-            dlg = LaundryInputDialog()
+            # Kirim dependency ke Dialog
+            dlg = LaundryInputDialog(self.request_service, self.user_id)
             dlg.exec()
 
     def show_catering_popup(self):
         if CateringInputDialog:
-            dlg = CateringInputDialog()
+            dlg = CateringInputDialog(self.request_service, self.user_id)
             dlg.exec()
 
     def show_refill_popup(self):
         if RefillGalonDialog:
-            dlg = RefillGalonDialog()
+            dlg = RefillGalonDialog(self.request_service, self.user_id)
             dlg.exec()
 
     def show_belanja_popup(self):
         if BelanjaInputDialog:
-            dlg = BelanjaInputDialog()
+            dlg = BelanjaInputDialog(self.request_service, self.user_id)
             dlg.exec()
 
     def pesan_layanan(self, layanan):

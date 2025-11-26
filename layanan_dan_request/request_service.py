@@ -1,7 +1,9 @@
 from typing import List, Optional
-from request import Request
-from layanan_service import LayananService
-from db_manager import DatabaseManager
+# Pastikan import path model & database benar
+from .request import Request 
+from .layanan import Layanan
+from database.db_manager import DatabaseManager
+from .layanan_service import LayananService 
 
 class RequestService:
 
@@ -9,78 +11,37 @@ class RequestService:
         self.db = db
         self.layanan_service = layanan_service
 
-    # Membuat request baru
-    def create_request(self, nama: str, namaLayanan: str) -> Optional[int]:
-
-        # cek apakah layanan valid
-        if self.layanan_service.get_layanan_by_nama(namaLayanan) is None:
-            return None
-
-        query = """
-            INSERT INTO request (nama, nama_layanan, status_bayar_kebutuhan,
-                                 status_request, bukti_bayar)
-            VALUES (%s, %s, FALSE, FALSE, NULL)
-            RETURNING id;
+    def create_request(self, user_id: int, nama_layanan: str, catatan: str = "") -> dict:
         """
-
-        result = self.db.execute_query(query, (nama, namaLayanan))
-        if result:
-            return result[0][0]
-        return None
-
-    def get_request_by_id(self, id: int) -> Optional[Request]:
-        query = """
-            SELECT id, nama, nama_layanan, status_bayar_kebutuhan,
-                   status_request, bukti_bayar
-            FROM request
-            WHERE id = %s
+        Membuat request layanan baru.
+        Mencari layanan_id berdasarkan nama, lalu insert ke tabel request.
         """
-        result = self.db.execute_query(query, (id,))
-        return None if not result else Request(*result[0])
+        # 1. Cari ID Layanan berdasarkan Nama
+        layanan = self.layanan_service.get_layanan_by_nama(nama_layanan)
+        
+        if not layanan:
+            return {"status": "error", "message": f"Layanan '{nama_layanan}' tidak ditemukan di sistem."}
 
-    def get_request_by_nama(self, nama: str) -> List[Request]:
+        # 2. Query Insert (Sesuai Skema Database + kolom catatan jika ada)
+        # Asumsi: Tabel request punya kolom: request_id, user_id, layanan_id, tanggal_request, status_bayar, status_request
+        # Kita gunakan CURDATE() untuk tanggal_request
+        
         query = """
-            SELECT id, nama, nama_layanan, status_bayar_kebutuhan,
-                   status_request, bukti_bayar
-            FROM request
-            WHERE LOWER(nama) = LOWER(%s)
+            INSERT INTO request (user_id, layanan_id, tanggal_request, status_bayar, status_request, catatan)
+            VALUES (%s, %s, CURDATE(), 'Belum Dibayar', 'Pending', %s)
         """
-        rows = self.db.execute_query(query, (nama,))
-        return [Request(*r) for r in rows]
+        
+        # Catatan: Jika tabel Anda belum ada kolom 'catatan', hapus bagian ', catatan' dan parameter terakhir.
+        params = (user_id, layanan.id, catatan)
 
-    def get_request_by_layanan(self, nama_layanan: str) -> List[Request]:
-        query = """
-            SELECT id, nama, nama_layanan, status_bayar_kebutuhan,
-                   status_request, bukti_bayar
-            FROM request
-            WHERE LOWER(nama_layanan) = LOWER(%s)
-        """
-        rows = self.db.execute_query(query, (nama_layanan,))
-        return [Request(*r) for r in rows]
+        try:
+            last_id = self.db.execute_update(query, params)
+            if last_id:
+                return {"status": "success", "message": "Request berhasil dibuat!", "id": last_id}
+            else:
+                return {"status": "error", "message": "Gagal menyimpan request ke database."}
+        except Exception as e:
+            print(f"Error create_request: {e}")
+            return {"status": "error", "message": str(e)}
 
-    def update_status_bayar_kebutuhan(self, id: int, status: bool) -> bool:
-        query = "UPDATE request SET status_bayar_kebutuhan = %s WHERE id = %s"
-        return self.db.execute_update(query, (status, id))
-
-    def update_status_request(self, id: int, status: bool) -> bool:
-        query = "UPDATE request SET status_request = %s WHERE id = %s"
-        return self.db.execute_update(query, (status, id))
-
-    def update_bukti_bayar(self, id: int, path: str) -> bool:
-        query = "UPDATE request SET bukti_bayar = %s WHERE id = %s"
-        return self.db.execute_update(query, (path, id))
-
-    def delete_request(self, id: int) -> bool:
-        query = "DELETE FROM request WHERE id = %s"
-        return self.db.execute_update(query, (id,))
-
-    def get_info_request(self, id: int):
-        req = self.get_request_by_id(id)
-        if req is None:
-            return None
-
-        layanan = self.layanan_service.get_layanan_by_nama(req.namaLayanan)
-        if layanan is None:
-            return None
-
-        return (layanan.deskripsi, layanan.harga, layanan.kebutuhan)
+    # ... (Sisa method get/update biarkan seperti sebelumnya atau sesuaikan jika perlu)
