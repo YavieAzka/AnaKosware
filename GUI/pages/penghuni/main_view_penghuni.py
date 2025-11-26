@@ -26,6 +26,19 @@ except ImportError as e:
     BerikanFeedback = None
     PenghuniLayananPage = None
 
+try:
+    from database.db_manager import DatabaseManager
+    from layanan_dan_request.layanan_service import LayananService
+    from layanan_dan_request.request_service import RequestService
+    # Jika ingin notifikasi tagihan juga (UC04), import NotificationService di sini
+    from notification.notification_service import NotificationService 
+except ImportError as e:
+    print(f"Error Importing Backend Services: {e}")
+    DatabaseManager = None
+    LayananService = None
+    RequestService = None
+    NotificationService = None
+
 class MainViewPenghuni(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -34,6 +47,30 @@ class MainViewPenghuni(QMainWindow):
         self._current_user_name = "Ahmad Husein"
         self._current_user_role = "Penghuni Kos"
         self._current_user_id = 1
+
+        self.db = None
+        self.layanan_service = None
+        self.request_service = None
+        self.notification_service = None
+
+        if DatabaseManager and LayananService and RequestService:
+            try:
+                # 1. Koneksi Database
+                self.db = DatabaseManager()
+                
+                # 2. Init Service Layanan (Butuh DB)
+                self.layanan_service = LayananService(self.db)
+                
+                # 3. Init Service Request (Butuh DB & LayananService)
+                self.request_service = RequestService(self.db, self.layanan_service)
+                
+                # 4. Init Notification Service (Optional untuk Homepage)
+                if NotificationService:
+                    self.notification_service = NotificationService()
+                    
+                print("Backend Services Connected Successfully.")
+            except Exception as e:
+                print(f"Failed to initialize services: {e}")
 
         self.setWindowTitle("AnaKosware - Panel Penghuni")
         self.setGeometry(100, 100, 1280, 800)
@@ -144,7 +181,7 @@ class MainViewPenghuni(QMainWindow):
         self.setWindowTitle("AnaKosware - Layanan")
         
         if PenghuniLayananPage:
-            # PASSING SERVICE & USER ID KE HALAMAN LAYANAN
+            # Sekarang self.request_service SUDAH ADA nilainya
             page = PenghuniLayananPage(self.request_service, self._current_user_id)
             self.page_container.layout().addWidget(page)
         else:
