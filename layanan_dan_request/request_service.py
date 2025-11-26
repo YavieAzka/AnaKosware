@@ -45,3 +45,38 @@ class RequestService:
             return {"status": "error", "message": str(e)}
 
     # ... (Sisa method get/update biarkan seperti sebelumnya atau sesuaikan jika perlu)
+    def get_all_requests_with_details(self) -> list:
+        """
+        Mengambil semua request dengan detail user dan layanan untuk Dashboard Penjaga.
+        Join tabel: request -> user -> penghuni -> layanan
+        """
+        query = """
+            SELECT 
+                r.request_id,
+                p.nomor_kamar,
+                u.username,
+                u.nama AS nama_lengkap,
+                r.tanggal_request,
+                l.nama_layanan,
+                l.harga_layanan,
+                r.status_request,
+                r.catatan
+            FROM request r
+            JOIN user u ON r.user_id = u.user_id
+            LEFT JOIN penghuni p ON u.user_id = p.user_id
+            JOIN layanan l ON r.layanan_id = l.layanan_id
+            ORDER BY r.tanggal_request DESC, r.request_id DESC
+        """
+        return self.db.execute_query(query)
+
+    def update_status_request(self, request_id: int, new_status: str) -> bool:
+        """Update status pengerjaan request (Pending -> In Progress -> Done)"""
+        query = "UPDATE request SET status_request = %s WHERE request_id = %s"
+        # Mapping status UI ke status Database jika perlu, tapi di sini kita samakan
+        # UI: Waiting/Pending -> In Progress -> Done
+        # DB: Pending, In Progress, Done
+        
+        # Normalisasi status dari UI combobox
+        if new_status == "Waiting": new_status = "Pending"
+        
+        return self.db.execute_update(query, (new_status, request_id)) > 0

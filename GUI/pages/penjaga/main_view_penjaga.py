@@ -10,10 +10,12 @@ from PyQt6.QtCore import Qt
 try:
     from database.db_manager import DatabaseManager
     from layanan_dan_request.layanan_service import LayananService
+    from layanan_dan_request.request_service import RequestService
 except ImportError as e:
     print(f"Database Error: {e}")
     DatabaseManager = None
     LayananService = None
+    RequestService = None
 
 # --- IMPORT KOMPONEN UI ---
 from GUI.components.penjaga.sidebar import Sidebar 
@@ -28,11 +30,14 @@ class MainViewPenjaga(QMainWindow):
         # 1. SETUP DATABASE & SERVICE
         self.db_manager = None
         self.layanan_service = None
+        self.request_service = None
         
         if DatabaseManager and LayananService:
             try:
                 self.db_manager = DatabaseManager()
                 self.layanan_service = LayananService(self.db_manager)
+                self.request_service = RequestService(self.db_manager, self.layanan_service)
+                print("Services Connected.")
                 print("Database & Service Connected Successfully.")
             except Exception as e:
                 print(f"Connection Failed: {e}")
@@ -107,10 +112,13 @@ class MainViewPenjaga(QMainWindow):
 
     def show_dashboard(self):
         self.clear_page()
-        # Pastikan DashboardPenjaga import-nya benar
-        if DashboardPenjaga:
-            page = DashboardPenjaga() 
+        # Inject RequestService ke Dashboard
+        if DashboardPenjaga and self.request_service:
+            page = DashboardPenjaga(self.request_service) # Kirim Service
             self.page_container.layout().addWidget(page)
+        elif DashboardPenjaga: # Fallback jika service mati (tampil dummy/kosong)
+             page = DashboardPenjaga(None)
+             self.page_container.layout().addWidget(page)
         else:
             self.page_container.layout().addWidget(QLabel("Dashboard Not Found"))
 
