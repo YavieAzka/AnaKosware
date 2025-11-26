@@ -159,14 +159,104 @@ class MainViewPenghuni(QMainWindow):
     def show_homepage(self):
         self.clear_page()
         self.setWindowTitle("AnaKosware - Homepage")
-        data = {
+        
+        # --- 1. AMBIL DATA PENGHUNI DARI DB ---
+        user_data = {
             "nama": self._current_user_name,
-            "kamar": "A01", "harga": 1500000, "masuk": "15 Jan 2023",
-            "bulan_ke": 12, "pembayaran_lunas": False,
-            "layanan": {"Laundry": "Done", "Cleaning": "Waiting"}
+            "kamar": "-", "harga": 0, "masuk": "-", 
+            "bulan_ke": 0, 
+            "bill_status": None,
+            "layanan": {}, # Riwayat status layanan
+            "rincian_tagihan": [] # List baru untuk rincian
         }
+
+        if self.db:
+            try:
+                # A. Info Kamar & Harga
+                q_info = """
+                    SELECT nomor_kamar, harga_kamar, tanggal_masuk 
+                    FROM penghuni WHERE user_id = %s
+                """
+                res_info = self.db.execute_query(q_info, (self._current_user_id,))
+                if res_info:
+                    row = res_info[0]
+                    user_data["kamar"] = row['nomor_kamar']
+                    user_data["harga"] = row['harga_kamar']
+                    # Hitung bulan ke- (sederhana)
+                    if row['tanggal_masuk']:
+                        import datetime
+                        delta = datetime.date.today() - row['tanggal_masuk']
+                        user_data["bulan_ke"] = (delta.days // 30) + 1
+                        user_data["masuk"] = row['tanggal_masuk'].strftime("%d %b %Y")
+
+                # B. Status Layanan (Request)
+                # Mengambil request terakhir
+                q_req = """
+                    SELECT l.nama_layanan, r.status_request 
+                    FROM request r
+                    JOIN layanan l ON r.layanan_id = l.layanan_id
+                    WHERE r.user_id = %s
+                    ORDER BY r.request_id DESC LIMIT 3
+                """
+                res_req = self.db.execute_query(q_req, (self._current_user_id,))
+                for r in res_req:
+                    user_data["layanan"][r['nama_layanan']] = r['status_request']
+
+                # C. Rincian Tagihan (Layanan Belum Dibayar)
+                q_bill = """
+                    SELECT l.nama_layanan, l.harga_layanan 
+                    FROM request r
+                    JOIN layanan l ON r.layanan_id = l.layanan_id
+                    WHERE r.user_id = %s AND r.status_bayar = 'Belum Dibayar'
+                """
+                res_bill = self.db.execute_query(q_bill, (self._current_user_id,))
+                for b in res_bill:
+                    # Handle jika harga_layanan 0 (misal laundry kiloan yg harganya dihitung belakangan/input manual)
+                    # Untuk simplifikasi, kita ambil harga dasar dulu
+                    user_data["rincian_tagihan"].append({
+                        "item": b['nama_layanan'],
+                        "harga": b['harga_layanan']
+                    })
+
+            except Exception as e:
+                print(f"Error fetching homepage data: {e}")
+
+        # --- 2. LOGIKA BILL STATUS (Gabungan Tagihan Bulanan + Layanan) ---
+        if self.notification_service:
+            try:
+                # Cek Tagihan Bulanan
+                bill = self.notification_service.get_monthly_bill_notification(self._current_user_id)
+                
+                # Jika ada tagihan bulanan yang harus dibayar, masukkan ke rincian
+                if bill and bill.get('is_due'):
+                    user_data['rincian_tagihan'].insert(0, {
+                        "item": "Sewa Kos Bulanan",
+                        "harga": bill['nominal']
+                    })
+                
+                # Hitung Total Tagihan Keseluruhan
+                total_tagihan = sum(item['harga'] for item in user_data['rincian_tagihan'])
+                
+                # Update object bill_status agar UI homepage bisa menampilkan total yang benar
+                if total_tagihan > 0:
+                    user_data['bill_status'] = {
+                        "type": "danger" if bill and bill.get('type') == 'danger' else "warning",
+                        "message": "Anda memiliki tagihan belum dibayar.",
+                        "nominal": total_tagihan,
+                        "detail_tanggal": bill.get('detail_tanggal') if bill else "Segera",
+                        "is_due": True
+                    }
+                else:
+                    # Jika tidak ada tagihan sama sekali
+                    user_data['bill_status'] = {
+                        "type": "info", "message": "Tidak ada tagihan.", "nominal": 0, "is_due": False
+                    }
+
+            except Exception as e:
+                print(f"Error fetching bill: {e}")
+
         if PenghuniHomepage:
-            page = PenghuniHomepage(data)
+            page = PenghuniHomepage(user_data)
             self.page_container.layout().addWidget(page)
 
     def show_feedback(self):
