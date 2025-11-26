@@ -8,7 +8,6 @@ class Dashboard:
     def get_penghuni_dashboard_info(self, user_id: int):
         """
         UC08: Melihat Dashboard Informasi Akun Penghuni.
-        Mengambil gabungan data:
         1. Profil Penghuni (Kamar, Harga, Jatuh Tempo)
         2. Status Tagihan Bulan Ini (Apakah sudah lunas?)
         """
@@ -32,8 +31,7 @@ class Dashboard:
 
         profil = profil_data[0]
         
-        # Parsing tanggal jatuh tempo (misal: mengambil tanggalnya saja: '10')
-        # Asumsi di DB disimpan sebagai Date, kita ambil hari-nya saja untuk display "Setiap tanggal X"
+        # Asumsi di DB disimpan sebagai Date, ambil hari-nya saja untuk display "Setiap tanggal X"
         tgl_tempo_db = profil['tanggal_jatuh_tempo']
         tgl_display = tgl_tempo_db.day if isinstance(tgl_tempo_db, datetime) else tgl_tempo_db
 
