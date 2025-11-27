@@ -303,7 +303,43 @@ class TransactionDetailDialog(QDialog):
     def process_verif(self, is_valid):
         if self.service.verify_payment(self.data['pembayaran_id'], is_valid):
             msg = "Pembayaran Diterima" if is_valid else "Pembayaran Ditolak"
-            QMessageBox.information(self, "Sukses", msg)
+
+            # === Pakai QMessageBox dengan style khusus ===
+            box = QMessageBox(self)
+            box.setIcon(QMessageBox.Icon.Information)
+            box.setWindowTitle("Sukses")
+            box.setText(msg)
+            box.setStandardButtons(QMessageBox.StandardButton.Ok)
+
+            # Biar teks & tombol kelihatan
+            box.setStyleSheet("""
+                QLabel { 
+                    color: #000000; 
+                    font-family: 'Segoe UI'; 
+                    font-size: 12pt;
+                }
+                QPushButton {
+                    color: #000000;
+                    background-color: #E5E7EB;
+                    padding: 6px 16px;
+                    border-radius: 6px;
+                }
+                QPushButton:hover {
+                    background-color: #CBD5E1;
+                }
+            """)
+
+            box.exec()
             self.accept()
         else:
-            QMessageBox.warning(self, "Gagal", "Terjadi kesalahan database.")
+            box = QMessageBox(self)
+            box.setIcon(QMessageBox.Icon.Warning)
+            box.setWindowTitle("Gagal")
+            box.setText("Terjadi kesalahan database.")
+            box.setStandardButtons(QMessageBox.StandardButton.Ok)
+            box.setStyleSheet("""
+                QLabel { color: #000000; font-family: 'Segoe UI'; font-size: 12pt; }
+                QPushButton { color: #000000; background-color: #FECACA; border-radius: 6px; padding: 6px 16px; }
+                QPushButton:hover { background-color: #FCA5A5; }
+            """)
+            box.exec()

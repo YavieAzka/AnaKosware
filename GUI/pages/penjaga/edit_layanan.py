@@ -22,7 +22,7 @@ QLabel#PageTitle { font-size: 24px; font-weight: bold; margin: 10px 0 25px 0; }
 QFrame#ServiceCard { border: 1px solid #E0E0E0; border-radius: 10px; background-color: #FFFFFF; min-width: 200px; min-height: 250px; padding: 15px; }
 QLabel#ServiceTitle { font-size: 16pt; font-weight: bold; margin-bottom: 10px; }
 QLabel#ServicePrice { font-size: 12pt; color: #FF9800; font-weight: bold; margin-bottom: 5px; }
-QPushButton.CardActionBtn { background-color: #FF9800; color: white; font-weight: 600; padding: 8px; border-radius: 6px; min-height: 35px; }
+QPushButton.CardActionBtn { background-color: #FF9800; color: black; font-weight: 600; padding: 8px; border-radius: 6px; min-height: 35px; }
 QPushButton.CardActionBtn:hover { background-color: #E68900; }
 QFrame#AddCard { border: 1px dashed #B0B0B0; border-radius: 10px; background-color: #FFFFFF; min-width: 200px; min-height: 250px; }
 """
@@ -63,8 +63,15 @@ class ServiceCard(QFrame):
 
         # Tombol
         btn_edit = QPushButton("Edit")
-        btn_edit.setProperty("class", "CardActionBtn")
         btn_edit.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_edit.setStyleSheet("""
+            background-color: white;          /* tombol putih */
+            color: black;                     /* teks hitam */
+            border: 2px solid #B0B0B0;        /* border abu (bisa diganti #000 untuk hitam) */
+            border-radius: 6px;               /* biar sama2 rounded */
+            padding: 8px;                     /* biar ukurannya mirip Hapus */
+            font-weight: bold;
+        """)
         btn_edit.clicked.connect(lambda: edit_callback(layanan_obj))
         layout.addWidget(btn_edit)
 
@@ -108,7 +115,7 @@ class EditLayanan(QWidget):
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("border: none; background-color: transparent;")
+        scroll.setStyleSheet("border: 2px; background-color: transparent;")
         
         self.content_widget = QWidget()
         self.grid_layout = QGridLayout(self.content_widget)

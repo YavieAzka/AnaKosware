@@ -18,7 +18,7 @@ class GenericRequestDialog(QDialog):
             QDialog { background-color: white; }
             QLabel { font-family: 'Segoe UI'; color: #2D3142; border: none; }
             QTextEdit {
-                border: 1px solid #CBD5E0; border-radius: 8px; padding: 10px; font-size: 14px; background: #F8FAFC;
+                border: 1px solid #CBD5E0; border-radius: 8px; padding: 10px; font-size: 14px; background: #d5dbe0;
             }
             QPushButton#ActionBtn {
                 background-color: #FF9966; color: white; border-radius: 10px; 

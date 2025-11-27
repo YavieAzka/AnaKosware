@@ -6,7 +6,7 @@ import sys
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, 
     QFrame, QFileDialog, QMessageBox, QDialog, QGraphicsDropShadowEffect,
-    QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView
+    QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView, QSizePolicy
 )
 from PyQt6.QtGui import QFont, QColor, QCursor
 from PyQt6.QtCore import Qt
@@ -73,12 +73,14 @@ class BillDetailDialog(QDialog):
 
 # --- DIALOG PEMBAYARAN ---
 class PembayaranDialog(QDialog):
-    def __init__(self, nominal=0, rincian=[], user_id=None):
+    def __init__(self, nominal=0, rincian=[], user_id=None, is_layanan=False, request_id=None):
         super().__init__()
         self.nominal = nominal
         self.rincian = rincian
         self.user_id = user_id  # PENTING: Menyimpan User ID untuk proses upload
-        
+        self.is_layanan = is_layanan
+        self.request_id = request_id
+
         self.setWindowTitle("Pembayaran Kos")
         self.setModal(True)
         self.setFixedSize(500, 550)
@@ -153,20 +155,38 @@ class PembayaranDialog(QDialog):
         layout.addLayout(row)
 
     def upload_bukti(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "Pilih Bukti", "", "Images (*.png *.jpg *.jpeg)")
-        
-        if file_path:
-            if PaymentService and self.user_id:
-                service = PaymentService()
-                result = service.process_monthly_payment(self.user_id, self.nominal, file_path)
-                
-                if result['status'] == 'success':
-                    QMessageBox.information(self, "Sukses", result['message'])
-                    self.accept()
-                else:
-                    QMessageBox.warning(self, "Gagal", result['message'])
-            else:
-                QMessageBox.critical(self, "Error", "Service Pembayaran tidak tersedia atau User ID hilang.")
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Pilih Bukti", "", "Images (*.png *.jpg *.jpeg)"
+        )
+
+        if not file_path:
+            return
+
+        if not PaymentService or not self.user_id:
+            QMessageBox.critical(self, "Error", "Service Pembayaran tidak tersedia.")
+            return
+
+        service = PaymentService()
+
+        if self.is_layanan:
+            result = service.process_layanan_payment(
+                user_id=self.user_id,
+                request_id=self.request_id,
+                nominal=self.nominal,
+                file_path_asal=file_path
+            )
+        else:
+            result = service.process_monthly_payment(
+                self.user_id,
+                self.nominal,
+                file_path
+            )
+
+        if result["status"] == "success":
+            QMessageBox.information(self, "Sukses", result["message"])
+            self.accept()
+        else:
+            QMessageBox.warning(self, "Gagal", result["message"])
 
 
 # --- HOMEPAGE PENGHUNI ---
@@ -175,9 +195,12 @@ class PenghuniHomepage(QWidget):
         super().__init__()
         
         default_data = {
-            "user_id": None, # Wajib ada
+            "user_id": None,
             "nama": "Penghuni", "kamar": "-", "harga": 0, "masuk": "-",
-            "bulan_ke": 0, "bill_status": None, "rincian_tagihan": [], "layanan": {}
+            "bulan_ke": 0,
+            "bill_status": None,
+            "rincian_tagihan": [],
+            "layanan": [] 
         }
         
         if penghuni_data:
@@ -279,73 +302,134 @@ class PenghuniHomepage(QWidget):
         return row
 
     def _create_bill_card(self):
-        card = QFrame(); card.setObjectName("BillCard"); card.setStyleSheet("QFrame#BillCard { background-color: white; }"); self._create_shadow(card)
-        layout = QVBoxLayout(card); layout.setContentsMargins(25, 25, 25, 25); layout.setSpacing(10)
-        lbl_title = QLabel("PENGINGAT TAGIHAN"); lbl_title.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold)); lbl_title.setStyleSheet("color: #A0AEC0; letter-spacing: 1px;")
+        card = QFrame()
+        card.setObjectName("BillCard")
+        card.setStyleSheet("QFrame#BillCard { background-color: white; }")
+        self._create_shadow(card)
+
+        # >>> tambahkan tinggi minimum supaya isi tidak ke-clip
+        card.setMinimumHeight(280)  # boleh disesuaikan, 280–320 juga oke
+        card.setSizePolicy(QSizePolicy.Policy.Preferred,
+                           QSizePolicy.Policy.Fixed)
+        # <<<
+
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(25, 25, 25, 25)
+        layout.setSpacing(10)
+
+        lbl_title = QLabel("PENGINGAT TAGIHAN")
+        lbl_title.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        lbl_title.setStyleSheet("color: #A0AEC0; letter-spacing: 1px;")
         layout.addWidget(lbl_title)
 
         notif = self.data.get('bill_status')
         rincian = self.data.get('rincian_tagihan', [])
-        status_box = QFrame(); status_box.setProperty("class", "StatusBox")
-        sb_layout = QHBoxLayout(status_box); sb_layout.setContentsMargins(15, 15, 15, 15)
-        icon = QLabel(); msg_title = QLabel()
 
+        status_box = QFrame()
+        status_box.setProperty("class", "StatusBox")
+        sb_layout = QHBoxLayout(status_box)
+        sb_layout.setContentsMargins(15, 15, 15, 15)
+        icon = QLabel()
+        msg_title = QLabel()
+
+        # --- LUNAS / AMAN ---
         if not notif or (notif['type'] == 'info' and notif.get('nominal') == 0):
             status_box.setProperty("class", "StatusBox StatusSuccess")
-            icon.setText("✅"); msg_title.setText("LUNAS / AMAN"); msg_title.setProperty("class", "TextSuccess")
-            desc = QLabel(notif['message'] if notif else "Tidak ada tagihan.")
-            desc.setStyleSheet("color: #718096; margin-top: 5px;")
-            layout.addWidget(status_box); sb_layout.addWidget(icon); sb_layout.addWidget(msg_title); sb_layout.addStretch()
-            layout.addWidget(desc)
-        else:
-            style = "StatusDanger" if notif['type'] == 'danger' else "StatusWarning"
-            text = "TextDanger" if notif['type'] == 'danger' else "TextWarning"
-            status_box.setProperty("class", f"StatusBox {style}")
-            icon.setText("📢" if notif['type'] == 'danger' else "⚠️")
-            msg_title.setText("BELUM DIBAYAR"); msg_title.setProperty("class", text)
-            sb_layout.addWidget(icon); sb_layout.addWidget(msg_title); sb_layout.addStretch()
+            icon.setText("✅")
+            msg_title.setText("LUNAS / AMAN")
+            msg_title.setProperty("class", "TextSuccess")
+
+            sb_layout.addWidget(icon)
+            sb_layout.addWidget(msg_title)
+            sb_layout.addStretch()
             layout.addWidget(status_box)
 
+            desc = QLabel(notif['message'] if notif else "Tidak ada tagihan.")
+            desc.setStyleSheet("color: #718096; margin-top: 5px;")
+            layout.addWidget(desc)
+
+        # --- MASIH ADA TAGIHAN ---
+        else:
+            style = "StatusDanger" if notif['type'] == 'danger' else "StatusWarning"
+            text_class = "TextDanger" if notif['type'] == 'danger' else "TextWarning"
+
+            status_box.setProperty("class", f"StatusBox {style}")
+            icon.setText("📢" if notif['type'] == 'danger' else "⚠️")
+            msg_title.setText("BELUM DIBAYAR")
+            msg_title.setProperty("class", text_class)
+
+            sb_layout.addWidget(icon)
+            sb_layout.addWidget(msg_title)
+            sb_layout.addStretch()
+            layout.addWidget(status_box)
+
+            # --- Rincian tagihan ---
             if rincian:
                 layout.addSpacing(10)
-                lbl_det = QLabel("Rincian:"); lbl_det.setStyleSheet("font-size: 12px; color: #888; font-weight: bold;")
+
+                lbl_det = QLabel("Rincian:")
+                lbl_det.setStyleSheet(
+                    "font-size: 12px; color: #888; font-weight: bold;"
+                )
                 layout.addWidget(lbl_det)
-                
-                # Batasi tampilan awal agar card tidak meledak
+
                 MAX_DISPLAY = 3
                 display_data = rincian[:MAX_DISPLAY]
-                
-                tbl = QTableWidget(); tbl.setColumnCount(2)
-                tbl.horizontalHeader().setVisible(False); tbl.verticalHeader().setVisible(False)
+
+                tbl = QTableWidget()
+                tbl.setColumnCount(2)
+                tbl.horizontalHeader().setVisible(False)
+                tbl.verticalHeader().setVisible(False)
                 tbl.setShowGrid(False)
-                tbl.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-                tbl.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+                tbl.horizontalHeader().setSectionResizeMode(
+                    0, QHeaderView.ResizeMode.Stretch
+                )
+                tbl.horizontalHeader().setSectionResizeMode(
+                    1, QHeaderView.ResizeMode.ResizeToContents
+                )
                 tbl.setRowCount(len(display_data))
                 tbl.setFixedHeight(len(display_data) * 30 + 5)
-                tbl.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection); tbl.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-                
+                tbl.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+                tbl.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
                 for i, item in enumerate(display_data):
                     tbl.setItem(i, 0, QTableWidgetItem(item['item']))
                     it_p = QTableWidgetItem(f"{item['harga']:,}")
-                    it_p.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter); it_p.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+                    it_p.setTextAlignment(
+                        Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+                    )
+                    it_p.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
                     tbl.setItem(i, 1, it_p)
+
                 layout.addWidget(tbl)
 
                 if len(rincian) > MAX_DISPLAY:
                     sisa = len(rincian) - MAX_DISPLAY
-                    btn_more = QPushButton(f"Lihat {sisa} item lainnya..."); btn_more.setProperty("class", "LinkBtn"); btn_more.setCursor(Qt.CursorShape.PointingHandCursor)
-                    btn_more.clicked.connect(lambda: self.show_detail_dialog(rincian))
+                    btn_more = QPushButton(f"Lihat {sisa} item lainnya...")
+                    btn_more.setProperty("class", "LinkBtn")
+                    btn_more.setCursor(Qt.CursorShape.PointingHandCursor)
+                    btn_more.clicked.connect(
+                        lambda: self.show_detail_dialog(rincian)
+                    )
                     layout.addWidget(btn_more)
 
+            # --- Tombol Bayar ---
             nominal_val = notif.get('nominal', 0)
             btn_action = QPushButton(f"Bayar Rp {nominal_val:,}")
-            btn_action.setProperty("class", "PayBtn"); btn_action.setCursor(Qt.CursorShape.PointingHandCursor)
-            
-            # PENTING: Ambil User ID dari self.data dan kirim ke dialog
+            btn_action.setProperty("class", "PayBtn")
+            btn_action.setCursor(Qt.CursorShape.PointingHandCursor)
+
+            btn_action.setMinimumHeight(42)
+            btn_action.setSizePolicy(QSizePolicy.Policy.Expanding,
+                                     QSizePolicy.Policy.Fixed)
+
             user_id_val = self.data.get('user_id')
-            btn_action.clicked.connect(lambda: self.show_pembayaran_dialog(nominal_val, rincian, user_id_val))
-            
-            layout.addSpacing(10); layout.addWidget(btn_action)
+            btn_action.clicked.connect(
+                lambda: self.show_pembayaran_dialog(nominal_val, rincian, user_id_val)
+            )
+
+            layout.addSpacing(10)
+            layout.addWidget(btn_action)
 
         layout.addStretch()
         return card
@@ -353,23 +437,121 @@ class PenghuniHomepage(QWidget):
     def _create_services_card(self):
         card = QFrame(); card.setObjectName("ServicesCard"); self._create_shadow(card)
         layout = QVBoxLayout(card); layout.setContentsMargins(25,20,25,20)
-        if not self.data.get("layanan"):
-            layout.addWidget(QLabel("Tidak ada layanan aktif saat ini.")); return card
-        for nama, status in self.data['layanan'].items():
-            row = QHBoxLayout(); row.addWidget(QLabel(nama))
-            lbl_s = QLabel(status); lbl_s.setFixedSize(120, 28); lbl_s.setAlignment(Qt.AlignmentFlag.AlignCenter); lbl_s.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
-            st_lower = status.lower()
-            col, txt = ("#C6F6D5", "#22543D") if "done" in st_lower else ("#FEFCBF", "#744210") if "progress" in st_lower else ("#EDF2F7", "#4A5568")
-            lbl_s.setStyleSheet(f"background-color: {col}; color: {txt}; border-radius: 14px;")
+
+        layanan_list = self.data.get("layanan") or []
+        if not layanan_list:
+            layout.addWidget(QLabel("Tidak ada layanan aktif saat ini."))
+            return card
+
+        for layanan in layanan_list:
+            row = QHBoxLayout()
+
+            # Nama layanan
+            row.addWidget(QLabel(layanan["nama"]))
+
+            # STATUS LAYANAN (pending / in progress / done / dst)
+            status_layanan = (layanan.get("status_layanan") or "-")
+            status_layanan_lower = status_layanan.lower()
+
+            lbl_s = QLabel(status_layanan)
+            lbl_s.setFixedSize(120, 28)
+            lbl_s.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            lbl_s.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+
+            # warna badge berdasarkan status_layanan
+            if "done" in status_layanan_lower or "selesai" in status_layanan_lower:
+                bg, fg = "#C6F6D5", "#22543D"
+            elif "progress" in status_layanan_lower or "proses" in status_layanan_lower or "pending" in status_layanan_lower:
+                bg, fg = "#FEFCBF", "#744210"
+            else:
+                bg, fg = "#EDF2F7", "#4A5568"
+
+            lbl_s.setStyleSheet(f"background-color: {bg}; color: {fg}; border-radius: 14px;")
             row.addWidget(lbl_s, alignment=Qt.AlignmentFlag.AlignRight)
-            layout.addLayout(row); line = QFrame(); line.setFixedHeight(1); line.setStyleSheet("background: #F0F0F0;")
-            layout.addWidget(line)
+
+            layout.addLayout(row)
+
         return card
 
     def show_pembayaran_dialog(self, nominal, rincian, user_id):
-        dlg = PembayaranDialog(nominal, rincian, user_id)
-        if dlg.exec(): QMessageBox.information(self, "Info", "Pembayaran sedang diproses.")
+        # default: anggap tagihan sewa
+        is_layanan = False
+        request_id = None
+
+        # Kalau hanya ada 1 item dan jenisnya LAYANAN → anggap pembayaran layanan
+        if rincian and len(rincian) == 1:
+            jenis = rincian[0].get("jenis")
+            if jenis == "LAYANAN":
+                is_layanan = True
+                request_id = rincian[0].get("request_id")
+
+        dlg = PembayaranDialog(
+            nominal=nominal,
+            rincian=rincian,
+            user_id=user_id,
+            is_layanan=is_layanan,
+            request_id=request_id
+        )
+        if dlg.exec():
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Info")
+            msg.setText("Pembayaran sedang diproses.")
+            msg.setIcon(QMessageBox.Icon.Information)
+
+            # Paksa warna background & teks supaya kontras, tidak ikut tema hitam
+            msg.setStyleSheet("""
+                QMessageBox {
+                    background-color: #FFFFFF;
+                }
+                QMessageBox QLabel {
+                    color: #1F2933;
+                    font-family: 'Segoe UI';
+                    font-size: 12pt;
+                }
+                QMessageBox QPushButton {
+                    min-width: 70px;
+                    padding: 6px 14px;
+                }
+            """)
+
+            msg.exec()
+
 
     def show_detail_dialog(self, rincian):
         dlg = BillDetailDialog(rincian)
         dlg.exec()
+    def show_layanan_payment_dialog(self, layanan):
+        dlg = PembayaranDialog(
+            nominal=layanan["harga"],
+            rincian=[{
+                "item": layanan["nama"],
+                "harga": layanan["harga"]
+            }],
+            user_id=self.data["user_id"],
+            is_layanan=True,
+            request_id=layanan["request_id"]
+        )
+
+        if dlg.exec():
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Info")
+            msg.setText("Pembayaran sedang diproses.")
+            msg.setIcon(QMessageBox.Icon.Information)
+
+            # Paksa warna background & teks supaya kontras, tidak ikut tema hitam
+            msg.setStyleSheet("""
+                QMessageBox {
+                    background-color: #FFFFFF;
+                }
+                QMessageBox QLabel {
+                    color: #1F2933;
+                    font-family: 'Segoe UI';
+                    font-size: 12pt;
+                }
+                QMessageBox QPushButton {
+                    min-width: 70px;
+                    padding: 6px 14px;
+                }
+            """)
+
+            msg.exec()

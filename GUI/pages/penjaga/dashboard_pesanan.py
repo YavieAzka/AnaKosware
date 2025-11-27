@@ -248,7 +248,7 @@ class PopUpPesanan(QDialog):
         self.add_row(form_layout, "Nama Pemesan:", data['nama_lengkap'])
         self.add_row(form_layout, "Nomor Kamar:", data.get('nomor_kamar') or "-")
         self.add_row(form_layout, "Layanan:", data['nama_layanan'])
-        self.add_row(form_layout, "Harga:", f"Rp {data['harga_layanan']:,}")
+        self.add_row(form_layout, "Harga:", f"Rp {data['harga_layanan']:}")
         
         layout.addLayout(form_layout)
         

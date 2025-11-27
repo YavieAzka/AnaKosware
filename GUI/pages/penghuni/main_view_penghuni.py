@@ -139,10 +139,13 @@ class MainViewPenghuni(QMainWindow):
         self.setWindowTitle("AnaKosware - Homepage")
         
         user_data = {
-            "user_id": self._current_user_id, # PENTING: KIRIM ID KE HOMEPAGE
+            "user_id": self._current_user_id,  # PENTING: KIRIM ID KE HOMEPAGE
             "nama": self._current_user_name,
-            "kamar": "-", "harga": 0, "masuk": "-", 
-            "bulan_ke": 0, "bill_status": None, "layanan": {}, "rincian_tagihan": [] 
+            "kamar": "-", "harga": 0, "masuk": "-",
+            "bulan_ke": 0,
+            "bill_status": None,
+            "layanan": [],
+            "rincian_tagihan": []
         }
 
         if self.db:
@@ -159,25 +162,78 @@ class MainViewPenghuni(QMainWindow):
                         user_data["bulan_ke"] = (delta.days // 30) + 1
                         user_data["masuk"] = row['tanggal_masuk'].strftime("%d %b %Y")
 
-                q_req = "SELECT l.nama_layanan, r.status_request FROM request r JOIN layanan l ON r.layanan_id = l.layanan_id WHERE r.user_id = %s ORDER BY r.request_id DESC LIMIT 3"
+                q_req = """
+                    SELECT 
+                        r.request_id,
+                        l.nama_layanan,
+                        l.harga_layanan,
+                        r.status_request,
+                        r.status_bayar
+                    FROM request r
+                    JOIN layanan l ON r.layanan_id = l.layanan_id
+                    WHERE r.user_id = %s
+                    ORDER BY r.request_id DESC
+                    LIMIT 5
+                """
                 res_req = self.db.execute_query(q_req, (self._current_user_id,))
-                for r in res_req: user_data["layanan"][r['nama_layanan']] = r['status_request']
 
-                q_bill = "SELECT l.nama_layanan, l.harga_layanan, r.catatan FROM request r JOIN layanan l ON r.layanan_id = l.layanan_id WHERE r.user_id = %s AND r.status_bayar = 'Belum Dibayar'"
+                user_data["layanan"] = []
+
+                for r in res_req:
+                    harga = r.get("harga_layanan", 0) or 0
+                    try:
+                        harga = int(harga)
+                    except:
+                        harga = 0
+
+                    status_request = (r.get("status_request") or "").strip()        # Pending / In Progress / Done
+                    status_bayar   = (r.get("status_bayar") or "").strip()          # Belum Dibayar / Sudah Dibayar
+
+                    # Untuk tampilan & logika tombol "Bayar", kita utamakan status_bayar
+                    status_text = status_bayar if status_bayar else status_request
+
+                    user_data["layanan"].append({
+                        "nama": r["nama_layanan"],
+                        "status_layanan": status_request or "-",
+                        "status_bayar": status_bayar or "-",
+                        "harga": harga,                 # dipakai untuk nominal bayar layanan
+                        "request_id": r["request_id"],  # dipakai saat pembayaran layanan
+                    })
+
+                q_bill = """
+                    SELECT 
+                        r.request_id,
+                        l.nama_layanan,
+                        l.harga_layanan,
+                        r.catatan
+                    FROM request r
+                    JOIN layanan l ON r.layanan_id = l.layanan_id
+                    WHERE r.user_id = %s
+                    AND r.status_bayar = 'Belum Dibayar'
+                """
                 res_bill = self.db.execute_query(q_bill, (self._current_user_id,))
                 if res_bill:
                     for b in res_bill:
                         harga_db = float(b.get('harga_layanan', 0))
                         catatan = b.get('catatan', '')
                         final_price = 0
-                        if harga_db > 0: final_price = int(harga_db)
+
+                        if harga_db > 0:
+                            final_price = int(harga_db)
                         else:
                             match = re.search(r'Rp\s*([\d,.]+)', catatan)
                             if match:
                                 clean_str = match.group(1).replace(',', '').replace('.', '')
-                                if clean_str.isdigit(): final_price = int(clean_str)
+                                if clean_str.isdigit():
+                                    final_price = int(clean_str)
+
                         if final_price > 0:
-                            user_data["rincian_tagihan"].append({"item": b['nama_layanan'], "harga": final_price})
+                            user_data["rincian_tagihan"].append({
+                                "item": b['nama_layanan'],
+                                "harga": final_price,
+                                "jenis": "LAYANAN",
+                                "request_id": b["request_id"],
+                            })
 
             except Exception as e: print(f"Error Homepage Data: {e}")
 
@@ -191,7 +247,12 @@ class MainViewPenghuni(QMainWindow):
                     is_rent_due = True
                     rent_nominal = bill['nominal']
                     rent_msg = bill.get('detail_tanggal', 'Segera')
-                    user_data['rincian_tagihan'].insert(0, {"item": "Sewa Kos Bulanan", "harga": int(rent_nominal)})
+                    user_data['rincian_tagihan'].insert(0, {
+                        "item": "Sewa Kos Bulanan",
+                        "harga": int(rent_nominal),
+                        "jenis": "TAGIHAN",
+                        "request_id": None,
+                    })
             except Exception as e: print(f"Notif Error: {e}")
 
         total_final = total_service + rent_nominal
