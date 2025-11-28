@@ -115,10 +115,12 @@ Aplikasi akan berjalan dengan tampilan GUI.
 | UC12       | Menerima dan Memenuhi Request                        | Reynard Anderson Wijaya                                    |
 | UC13       | Memberikan Feedback                                  | Syaqina Octavia Rizha                                      |
 | UC14       | Melihat Feedback                                     | Syaqina Octavia Rizha                                      |
+| -          | Desain UI/UX                                         | Keisha Rizka Syofyani & Alya Nur Rahmah                    |
 | -          | GUI                                                  | Keisha Rizka Syofyani & Alya Nur Rahmah & Yavie Azka Putra |
 | -          | Inisialisasi Database                                | Yavie Azka Putra                                           |
 | -          | Integrasi Front-End & Backend                        | Yavie Azka Putra                                           |
 | -          | Testing & Debugging                                  | Helena Kristela Sarhawa                                    |
+| -          | File doc                                             | Keisha Rizka Syofyani                                      |
 
 
 ---
@@ -191,5 +193,8 @@ Berikut daftar tabel yang digunakan dalam sistem:
 ├── uploads
 ├── venv_anakosware
 └── verification
+└── doc
+└── requirements.txt
+
 ```
 
