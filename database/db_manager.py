@@ -10,7 +10,7 @@ class DatabaseManager:
             cls._instance = super(DatabaseManager, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, host='localhost', user='root', password='[sesuai masing-masing]', database='anakosware_db'):
+    def __init__(self, host='localhost', user='root', password='Kkeimchi_21', database='anakosware_db'):
         # Pastikan password di atas benar sesuai konfigurasi MySQL lokal Anda
         if not hasattr(self, 'connection') or self.connection is None:
             self.db_config = {
